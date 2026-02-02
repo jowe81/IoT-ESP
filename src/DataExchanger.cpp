@@ -48,14 +48,14 @@ void DataExchanger::exchange(bool force, const char* reason) {
     _doc.clear();
     JsonObject root = _doc.to<JsonObject>();
 
-    root["transmissionReason"] = force ? "forced" : "scheduled";
-
-    // Override reason if a specific one was provided or pending.
-    if (reason && *reason) {
-        root["transmissionReason"] = reason;
-    }
-
     addToJson(root);
+
+    // Add the reason/trigger for the transmission to the exchanger data.
+    if (root.containsKey(_name)) {
+        JsonObject nested = root[_name];
+        const char* actualReason = (reason && *reason) ? reason : (force ? "forced" : "scheduled");
+        nested["trigger"] = actualReason;
+    }
 
     for (JsonProvider* provider : _providers) {
         provider->addToJson(root);
