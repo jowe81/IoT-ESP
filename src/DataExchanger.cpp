@@ -4,6 +4,7 @@
 
 struct DataExchangerConfig {
     unsigned long interval;
+    char url[128];
     uint32_t magic;
 };
 
@@ -21,11 +22,20 @@ void DataExchanger::loadConfig() {
     
     if (config.magic == 0xCAFEBABE) {
         _interval = config.interval;
+        // Ensure null termination
+        config.url[sizeof(config.url) - 1] = 0;
+        if (strlen(config.url) > 0) {
+            _url = String(config.url);
+        }
     }
 }
 
 void DataExchanger::saveConfig() {
-    DataExchangerConfig config = { _interval, 0xCAFEBABE };
+    DataExchangerConfig config;
+    config.interval = _interval;
+    strncpy(config.url, _url.c_str(), sizeof(config.url));
+    config.url[sizeof(config.url) - 1] = 0;
+    config.magic = 0xCAFEBABE;
     EEPROM.put(_eepromOffset, config);
     EEPROM.commit();
 }
@@ -93,6 +103,7 @@ void DataExchanger::addToJson(JsonObject& doc) {
     JsonObject nested = doc.createNestedObject(_name);
     nested["type"] = "DataExchanger";
     nested["interval"] = _interval;
+    nested["url"] = _url;
 }
 
 void DataExchanger::processJson(JsonObject& doc) {
@@ -100,10 +111,22 @@ void DataExchanger::processJson(JsonObject& doc) {
         JsonObject config = doc[_name];
 
         if (config.containsKey("setInterval")) {
-            unsigned long newInterval = config["setInterval"];
+            // Explicitly extract as JsonVariant to handle both number and string input types safely
+            JsonVariant intervalVar = config["setInterval"];
+            unsigned long newInterval = intervalVar.as<unsigned long>();
             if (newInterval >= 10000 && newInterval <= 600000 && newInterval != _interval) {
                 _interval = newInterval;
                 saveConfig();
+                Log.info("DataExchanger: Interval updated");
+            }
+        }
+
+        if (config.containsKey("setUrl")) {
+            String newUrl = config["setUrl"].as<String>();
+            if (newUrl.length() > 0 && newUrl != _url && newUrl.length() < 128) {
+                _url = newUrl;
+                saveConfig();
+                Log.info("DataExchanger: URL updated");
             }
         }
     }
