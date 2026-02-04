@@ -2,7 +2,15 @@
 #define WIFI_CONNECTION_H
 
 #include <Arduino.h>
+#ifdef ESP32
+#include <WiFi.h>
+// Map ESP8266 sleep modes to ESP32 boolean toggle
+typedef bool WiFiSleepType;
+#define WIFI_NONE_SLEEP false
+#define WIFI_LIGHT_SLEEP true
+#else
 #include <ESP8266WiFi.h>
+#endif
 
 class WifiConnection {
   private:

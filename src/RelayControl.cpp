@@ -1,6 +1,6 @@
 #include "RelayControl.h"
 
-RelayControl::RelayControl(int pin, String name, bool activeLow) 
+RelayControl::RelayControl(String name, int pin, bool activeLow) 
     : DeviceControl(name), pin(pin), _activeLow(activeLow) {
     pinMode(pin, OUTPUT);
 

@@ -1,6 +1,10 @@
 #include "WifiConnection.h"
 #include "Logger.h"
+#ifdef ESP32
+#include <HTTPClient.h>
+#else
 #include <ESP8266HTTPClient.h>
+#endif
 #include <WiFiClient.h>
 
 WifiConnection::WifiConnection(const char* ssid, const char* password, WiFiSleepType sleepMode) 
@@ -12,7 +16,11 @@ void WifiConnection::begin() {
     WiFi.begin(_ssid, _password);
 
     if (_sleepMode) {
+#ifdef ESP32
+        WiFi.setSleep(_sleepMode);
+#else
         WiFi.setSleepMode(_sleepMode);
+#endif
     
     }
     Log.info("Connecting to WiFi:");

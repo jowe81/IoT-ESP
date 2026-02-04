@@ -89,7 +89,12 @@ void BatteryMonitor::update() {
             delay(2);
             
             // Convert 10-bit ADC (0-1023) to voltage based on the divider
-            float voltage = (raw / 1023.0) * _ratio * _voltageAdjustment;
+            #ifdef ESP32
+                //float voltage = (raw / 4095.0) * _ratio * _voltageAdjustment;
+                float voltage = raw * _ratio * _voltageAdjustment;
+            #else
+                float voltage = (raw / 1023.0) * 3.3 * _ratio * _voltageAdjustment;
+            #endif
 
             bool isOutlier = false;
 
@@ -186,35 +191,41 @@ bool BatteryMonitor::gotCritical() {
 void BatteryMonitor::addToJson(JsonObject& doc) {
     int totalReadings = _readingsBufferSize * READINGS_PER_CYCLE;
 
+    float voltage = getVoltage();
+
     JsonObject nested = doc.createNestedObject(_name);
     nested["type"] = TYPE;
-    float voltage = getVoltage();
+    nested["bufferSize"] = _readingsBufferSize;
+    
     if (voltage > 0) {
-        nested["voltage"] = getVoltage();
+        nested["voltage"] = voltage;
         nested["thresholdLow"] = _lowThreshold;
         nested["thresholdCritical"] = _criticalThreshold;
-        nested["bufferSize"] = _readingsBufferSize;
         nested["adjustment"] = _voltageAdjustment;
         nested["isLow"] = isLow();
         nested["isCritical"] = isCritical();
         nested["isStale"] = (_readingsCount < totalReadings);
         nested["isBuffering"] = false;
     } else {
+        int raw = analogRead(_pin);
         nested["isBuffering"] = true;
+        nested["raw"] = raw;
+        nested["momentary"] = raw * _ratio * _voltageAdjustment;
+        nested["readingsCount"] = _readingsCount;
     }
 }
 
 void BatteryMonitor::processJson(JsonObject& doc) {
     if (doc.containsKey(_name)) {
         JsonObject config = doc[_name];
-        if (config.containsKey("low")) {
-            _lowThreshold = config["low"];
+        if (config.containsKey("setLow")) {
+            _lowThreshold = config["setLow"].as<float>();
         }
-        if (config.containsKey("critical")) {
-            _criticalThreshold = config["critical"];
+        if (config.containsKey("setCritical")) {
+            _criticalThreshold = config["setCritical"].as<float>();
         }
-        if (config.containsKey("bufferSize")) {
-            int newSize = config["bufferSize"];
+        if (config.containsKey("setBufferSize")) {
+            int newSize = config["setBufferSize"].as<int>();
             if (newSize > 0 && newSize != _readingsBufferSize) {
                 _readingsBufferSize = newSize;
                 _readings.assign(_readingsBufferSize * READINGS_PER_CYCLE, 0.0);
@@ -222,8 +233,8 @@ void BatteryMonitor::processJson(JsonObject& doc) {
                 _readingsIndex = 0;
             }
         }
-        if (config.containsKey("adjustment")) {
-            _voltageAdjustment = config["adjustment"];
+        if (config.containsKey("setAdjustment")) {
+            _voltageAdjustment = config["setAdjustment"].as<float>();
         }
         saveConfig();
     }

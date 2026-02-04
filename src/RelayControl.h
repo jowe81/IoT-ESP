@@ -10,7 +10,7 @@ class RelayControl : public DeviceControl {
         bool _activeLow;
 
     public:
-        RelayControl(int pin, String name, bool activeLow = false);
+        RelayControl(String name, int pin, bool activeLow = false);
         void turnOn() override;
         void turnOff() override;
         void toggle() override;

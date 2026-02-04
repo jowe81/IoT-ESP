@@ -1,13 +1,32 @@
 #include <Arduino.h>
-#include <ESP8266WiFi.h>
 #include <EEPROM.h>
+#ifdef ESP32
+#include <WiFi.h>
+#include "esp_pm.h"
+// Define pin mappings for ESP32 (Adjust these GPIOs to match your actual wiring)
+#ifndef D1
+#define D1 4
+#define D2 16
+#define D3 18
+#define D5 26
+#define D6 17
+#define D7 19
+#endif
+#ifndef A0
+#define A0 34 // Must use an ADC1 pin (GPIO 32-39) when WiFi is active
+#endif
+#ifndef LED_BUILTIN
+#define LED_BUILTIN 2 // Standard built-in LED pin for ESP32 Dev Kits
+#endif
+#else
+#include <ESP8266WiFi.h>
+#endif
 
 
 #include "BatteryMonitor.h"
 #include "WifiConnection.h"
 #include "Logger.h"
 #include "RelayControl.h"
-#include "BistableRelayControl.h"
 #include "PushButtonMonitor.h"
 #include "TemperatureReader.h"
 #include "DataExchanger.h"
@@ -20,14 +39,14 @@ const char* DEVICE_ID = "woodshed_01";
 SystemMonitor systemMonitor("systemMonitor", DEVICE_ID);
 
 // I/O
-BatteryMonitor battery("batteryMonitor", A0, 48.198, 11.9, 11.5, 0, 60); 
-BistableRelayControl lightInside("lightInside", D1, D1);
-BistableRelayControl lightOutside("lightOutside", D2, D2);
-BistableRelayControl nightLight("nightLight", D6, D6);
+BatteryMonitor battery("batteryMonitor", A0, 0.00484, 11.9, 11.5, 0, 60); 
+RelayControl lightInside("lightInside", D1);
+RelayControl lightOutside("lightOutside", D2);
+RelayControl nightLight("nightLight", D6);
 PushButtonMonitor lightSwitchForOutside("lightSwitchOutside", D3, true);
 PushButtonMonitor lightSwitchForInside("lightSwitchInside", D7, true);
 TemperatureReader tempSensor(D5, "tempOutside");
-RelayControl statusLed(LED_BUILTIN, "statusLed", true);
+RelayControl statusLed("statusLed", LED_BUILTIN, false);
 
 // Data Exchanger (Send every 60 seconds)
 // Eventually this will go to: http://jj-auto.wnet.wn:3000/auto/remote/remoteID=<deviceId>
@@ -43,6 +62,24 @@ void setup() {
     Log.info("Starting up...");
     // Reserve 512 bytes for config (BatteryMonitor uses 0-12, DataExchanger uses 32+)
     EEPROM.begin(512);
+
+#ifdef ESP32
+    // Configure power management for automatic light sleep.
+    // This makes delay() behave more like on the ESP8266, where it enters light sleep.
+    // This requires specific build flags in platformio.ini (see explanation).
+    esp_pm_config_esp32_t pm_config = {
+        .max_freq_mhz = 80, // Run at 80MHz to save power, instead of default 240MHz
+        .min_freq_mhz = 40,
+        .light_sleep_enable = true
+    };
+    esp_err_t err = esp_pm_configure(&pm_config);
+    if (err == ESP_OK) {
+        Log.info("ESP32 Power Management configured for automatic light sleep.");
+    } else {
+        Log.error("ESP32 Power Management configuration FAILED. Check build flags.");
+    }
+#endif
+
     wifi.begin();
     battery.begin();
     tempSensor.begin();
@@ -61,6 +98,9 @@ void setup() {
 
     // Turn off lights on startup.
     turnOffLights();
+
+    // Send initial transmission.
+    dataExchanger.exchange(true, "startup");
 
     Log.info("Setup done.");
 }
@@ -97,7 +137,11 @@ void loop() {
         turnOffLights();
         dataExchanger.exchange(true, "critical_battery_shutdown");
         // 3600e6 is 3,600,000,000 microseconds (1 hour)
-        ESP.deepSleep(3600e6);        
+        #ifdef ESP32
+            esp_deep_sleep(3600e6);
+        #else
+            ESP.deepSleep(3600e6);
+        #endif
     }
 
     // Restart the chip if fragmentation has reached a critical level.

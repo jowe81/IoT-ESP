@@ -20,7 +20,11 @@ uint32_t SystemMonitor::getFreeHeap() {
 }
 
 uint32_t SystemMonitor::getLargestBlock() {
+#ifdef ESP32
+    return ESP.getMaxAllocHeap();
+#else
     return ESP.getMaxFreeBlockSize();
+#endif
 }
 
 unsigned long SystemMonitor::getUptime() {
@@ -42,7 +46,12 @@ void SystemMonitor::processJson(JsonObject& doc) {
 
             if (command.containsKey("sleep") && command["sleep"].is<unsigned long>()) {
                 // Use 1000ULL to force 64-bit arithmetic, preventing overflow when converting ms to us
-                ESP.deepSleep(command["sleep"].as<unsigned long>() * 1000ULL);
+                uint64_t sleepTime = command["sleep"].as<unsigned long>() * 1000ULL;
+                #ifdef ESP32
+                    esp_deep_sleep(sleepTime);
+                #else
+                    ESP.deepSleep(sleepTime);
+                #endif
             }
         }
     }
