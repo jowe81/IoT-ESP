@@ -40,9 +40,9 @@ SystemMonitor systemMonitor("systemMonitor", DEVICE_ID);
 
 // I/O
 BatteryMonitor battery("batteryMonitor", A0, 0.00484, 11.9, 11.5, 0, 60); 
-RelayControl lightInside("lightInside", D1);
-RelayControl lightOutside("lightOutside", D2);
-RelayControl nightLight("nightLight", D6);
+RelayControl lightInside("lightInside", D1, false, true, 1000, 200);
+RelayControl lightOutside("lightOutside", D2, false, true, 1000, 220);
+RelayControl nightLight("nightLight", D6, false, false, 1000, 240);
 PushButtonMonitor lightSwitchForOutside("lightSwitchOutside", D3, true);
 PushButtonMonitor lightSwitchForInside("lightSwitchInside", D7, true);
 TemperatureReader tempSensor(D5, "tempOutside");
@@ -84,6 +84,10 @@ void setup() {
     battery.begin();
     tempSensor.begin();
     dataExchanger.begin();
+    lightInside.begin();
+    lightOutside.begin();
+    nightLight.begin();
+    statusLed.begin();
 
     // Register sensors to the data exchanger
     dataExchanger.addProvider(&battery);
@@ -117,6 +121,12 @@ void loop() {
     }
 
     battery.update();
+    
+    // Update relays to handle auto-off timers
+    lightInside.update();
+    lightOutside.update();
+    nightLight.update();
+    statusLed.update();
 
     // Turn lights off if the battery is low, but only
     // force a data exchange if it got low since the last reading.
