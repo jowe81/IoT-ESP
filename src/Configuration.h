@@ -36,6 +36,7 @@ extern const char* DEVICE_ID;
 // Specific pointers for critical system logic (can be null)
 extern BatteryMonitor* systemBattery;
 extern SystemMonitor* systemMonitor;
+extern DeviceControl* statusIndicator;
 
 // Lists for generic iteration
 extern std::vector<Device*> allDevices;

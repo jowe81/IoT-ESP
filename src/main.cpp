@@ -55,15 +55,8 @@ void setup() {
 
 void loop() {
     // Turn on the internal LED during network activity.
-    // Note: We assume the last device in allDevices is the status LED or we could expose it specifically,
-    // but for now we rely on the specific pointer if we want to control it manually here.
-    // However, since we moved statusLed to Configuration.cpp and didn't expose it specifically,
-    // we can either expose it or just let it be part of the generic update.
-    // For the specific "Network Activity LED" feature, we need access to it.
-    // Let's assume we don't strictly need the LED on *every* loop for network, or we add it to Config.
-    // For this refactor, I will skip the manual LED toggle here to keep main generic, 
-    // OR we can add `extern RelayControl statusLed;` to Configuration.h if strictly needed.
-    
+    if (statusIndicator) statusIndicator->turnOn();
+
     // Check connectivity and attempt to (re)connect if needed.
     wifi.update();
     if (!dataExchanger.exchange()) {
@@ -71,6 +64,11 @@ void loop() {
         for (auto* device : allDevices) {
             device->refreshState();
         }
+    }
+
+    // Leave the LED on if there's no connection, otherwise turn it off (creating a blink)
+    if (statusIndicator && wifi.isConnected()) {
+        statusIndicator->turnOff();
     }
 
     // Generic Device Update Loop

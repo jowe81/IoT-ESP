@@ -12,9 +12,9 @@ DataExchanger dataExchanger("dataExchanger", DEVICE_ID, 60000, "http://server.wn
 // --- Devices ---
 static SystemMonitor sysMon("systemMonitor", DEVICE_ID);
 static BatteryMonitor batMon("batteryMonitor", A0, 0.00484, 11.9, 11.5, 0, 60);
-static RelayControl lightInside("lightInside", D1, false, true, 200, 200);
+static RelayControl lightInside("lightInside", D6, false, true, 200, 200);
 static RelayControl lightOutside("lightOutside", D2, false, true, 200, 220);
-static RelayControl nightLight("nightLight", D6, false, false, 200, 240);
+static RelayControl nightLight("nightLight", D1, false, false, 200, 240);
 static PushButtonMonitor lightSwitchForOutside("lightSwitchOutside", D3, true);
 static PushButtonMonitor lightSwitchForInside("lightSwitchInside", D7, true);
 static TemperatureReader tempSensor(D5, "tempOutside");
@@ -24,6 +24,7 @@ void setupConfiguration() {
     // 1. Assign specific pointers for main loop logic
     systemMonitor = &sysMon;
     systemBattery = &batMon;
+    statusIndicator = &statusLed;
 
     // 2. Configure wiring (Buttons -> Relays)
     lightSwitchForOutside.setTarget(&lightOutside);

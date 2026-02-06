@@ -7,6 +7,7 @@ WifiConnection wifi("jjnet_automation", "2023-02-18!a", WIFI_LIGHT_SLEEP);
 // These will be assigned by the specific config file's setupConfiguration()
 BatteryMonitor* systemBattery = nullptr;
 SystemMonitor* systemMonitor = nullptr;
+DeviceControl* statusIndicator = nullptr;
 
 // Lists for generic iteration
 // These will be populated by the specific config file's setupConfiguration()
