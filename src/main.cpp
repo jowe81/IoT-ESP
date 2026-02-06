@@ -1,7 +1,7 @@
 #include <Arduino.h>
 #include <EEPROM.h>
 #ifdef ESP32
-#include "esp_pm.h"
+#include <esp_wifi.h>
 #endif
 
 #include "Logger.h"
@@ -22,24 +22,21 @@ void setup() {
     // Initialize configuration (instantiate objects, wire them up)
     setupConfiguration();
 
+    wifi.begin();
+
 #ifdef ESP32
-    // Configure power management for automatic light sleep.
-    // This makes delay() behave more like on the ESP8266, where it enters light sleep.
-    // This requires specific build flags in platformio.ini (see explanation).
-    esp_pm_config_esp32_t pm_config = {
-        .max_freq_mhz = 80, // Run at 80MHz to save power, instead of default 240MHz
-        .min_freq_mhz = 40,
-        .light_sleep_enable = true
-    };
-    esp_err_t err = esp_pm_configure(&pm_config);
+    // Enable Modem Sleep (Automatic Radio Sleep).
+    // This saves power by turning off the radio between WiFi beacons.
+    // It is supported by the standard Arduino framework.
+    // Note: Must be called AFTER WiFi is initialized (wifi.begin).
+    esp_err_t err = esp_wifi_set_ps(WIFI_PS_MIN_MODEM);
     if (err == ESP_OK) {
-        Log.info("ESP32 Power Management configured for automatic light sleep.");
+        Log.info("ESP32 Power Management: Modem Sleep ENABLED.");
     } else {
-        Log.error("ESP32 Power Management configuration FAILED. Check build flags.");
+        Log.error("ESP32 Power Management configuration FAILED.");
     }
 #endif
 
-    wifi.begin();
     dataExchanger.begin();
     
     // Initialize all generic devices
