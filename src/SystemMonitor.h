@@ -8,6 +8,7 @@ class SystemMonitor : public JsonProvider {
 private:
     String _deviceId;
     String _name;
+    int _loopDelay;
 
 public:
     static constexpr const char* TYPE = "SystemMonitor";
@@ -18,6 +19,7 @@ public:
     bool fragmentationIsCritical();
     unsigned long getUptime();
     void processJson(JsonObject& doc) override;
+    int getLoopDelay();
 };
 
 #endif

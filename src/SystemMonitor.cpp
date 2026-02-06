@@ -1,6 +1,6 @@
 #include "SystemMonitor.h"
 
-SystemMonitor::SystemMonitor(String name, String deviceId) : _deviceId(deviceId), _name(name) {
+SystemMonitor::SystemMonitor(String name, String deviceId) : _deviceId(deviceId), _name(name), _loopDelay(20) {
     if (_name.length() == 0) {
         _name = "_system";
     }
@@ -13,6 +13,7 @@ void SystemMonitor::addToJson(JsonObject& doc) {
     nested["freeHeap"] = getFreeHeap();
     nested["largestBlock"] = getLargestBlock();
     nested["uptime"] = getUptime();
+    nested["loopDelay"] = _loopDelay;
 }
 
 uint32_t SystemMonitor::getFreeHeap() {
@@ -53,6 +54,17 @@ void SystemMonitor::processJson(JsonObject& doc) {
                     ESP.deepSleep(sleepTime);
                 #endif
             }
+
+            if (command.containsKey("setLoopDelay")) {
+                int newDelay = command["setLoopDelay"].as<int>();
+                if (newDelay >= 0) {
+                    _loopDelay = newDelay;
+                }
+            }
         }
     }
+}
+
+int SystemMonitor::getLoopDelay() {
+    return _loopDelay;
 }

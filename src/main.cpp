@@ -40,9 +40,9 @@ SystemMonitor systemMonitor("systemMonitor", DEVICE_ID);
 
 // I/O
 BatteryMonitor battery("batteryMonitor", A0, 0.00484, 11.9, 11.5, 0, 60); 
-RelayControl lightInside("lightInside", D1, false, true, 1000, 200);
-RelayControl lightOutside("lightOutside", D2, false, true, 1000, 220);
-RelayControl nightLight("nightLight", D6, false, false, 1000, 240);
+RelayControl lightInside("lightInside", D1, false, true, 200, 200);
+RelayControl lightOutside("lightOutside", D2, false, true, 200, 220);
+RelayControl nightLight("nightLight", D6, false, false, 200, 240);
 PushButtonMonitor lightSwitchForOutside("lightSwitchOutside", D3, true);
 PushButtonMonitor lightSwitchForInside("lightSwitchInside", D7, true);
 TemperatureReader tempSensor(D5, "tempOutside");
@@ -176,5 +176,5 @@ void loop() {
     }
 
     // Allow the chip to go to light sleep.
-    delay(1000);
+    delay(systemMonitor.getLoopDelay());
 }
