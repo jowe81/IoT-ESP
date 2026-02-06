@@ -91,7 +91,8 @@ void BistableRelayControl::processJson(JsonObject& doc) {
 
             if (command.containsKey("toggleState") && command["toggleState"].as<bool>()) {
                 toggle();
-            } else if (command.containsKey("setState") && command["setState"].is<bool>()) {
+            }
+            if (command.containsKey("setState") && command["setState"].is<bool>()) {
                 // Only act if setState is explicitly true or false, ignore null/string/etc.
                 bool state = command["setState"].as<bool>();
                 state ? turnOn() : turnOff();

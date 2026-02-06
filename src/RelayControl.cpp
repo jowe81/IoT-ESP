@@ -169,20 +169,28 @@ void RelayControl::processJson(JsonObject& doc) {
         if (doc[_name].is<JsonObject>()) {
             JsonObject command = doc[_name].as<JsonObject>();
 
+            // Process settings first to ensure they apply before any state change
+            if (command.containsKey("setPercentage")) {
+                setPercentage(command["setPercentage"].as<int>());
+            }
+            if (command.containsKey("setFrequency")) {
+                setFrequency(command["setFrequency"].as<int>());
+            }
+            if (command.containsKey("setAutoOffTimer")) {
+                setAutoOffTimer(command["setAutoOffTimer"].as<unsigned long>());
+            }
+            if (command.containsKey("setFadeDuration")) {
+                setFadeDuration(command["setFadeDuration"].as<int>());
+            }
+
+            // Process state changes
             if (command.containsKey("toggleState") && command["toggleState"].as<bool>()) {
                 toggle();
-            } else if (command.containsKey("setState") && command["setState"].is<bool>()) {
+            }
+            if (command.containsKey("setState") && command["setState"].is<bool>()) {
                 // Only act if setState is explicitly true or false, ignore null/string/etc.
                 bool state = command["setState"].as<bool>();
                 state ? turnOn() : turnOff();
-            } else if (command.containsKey("setPercentage")) {
-                setPercentage(command["setPercentage"].as<int>());
-            } else if (command.containsKey("setFrequency")) {
-                setFrequency(command["setFrequency"].as<int>());
-            } else if (command.containsKey("setAutoOffTimer")) {
-                setAutoOffTimer(command["setAutoOffTimer"].as<unsigned long>());
-            } else if (command.containsKey("setFadeDuration")) {
-                setFadeDuration(command["setFadeDuration"].as<int>());
             }
         }
     }
