@@ -1,12 +1,33 @@
 #include "PushButtonMonitor.h"
 
 PushButtonMonitor::PushButtonMonitor(String name, int pin, bool activeLow) 
-    : _pin(pin), _name(name), _activeLow(activeLow), _lastReading(false), _state(false), _lastDebounceTime(0), _localAction(true) {
+    : _pin(pin), _name(name), _activeLow(activeLow), _lastReading(false), _state(false), _lastDebounceTime(0), _localAction(true), _targetDevice(nullptr), _triggerExchange(false) {
     if (_activeLow) {
         pinMode(_pin, INPUT_PULLUP);
     } else {
         pinMode(_pin, INPUT);
     }
+}
+
+void PushButtonMonitor::setTarget(DeviceControl* target) {
+    _targetDevice = target;
+}
+
+void PushButtonMonitor::update() {
+    if (checkPressed()) {
+        if (_localAction && _targetDevice) {
+            _targetDevice->toggle();
+        }
+        _triggerExchange = true;
+    }
+}
+
+bool PushButtonMonitor::shouldTriggerExchange() {
+    return _triggerExchange;
+}
+
+void PushButtonMonitor::resetTriggerExchange() {
+    _triggerExchange = false;
 }
 
 bool PushButtonMonitor::isPressed() {

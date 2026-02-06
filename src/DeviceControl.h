@@ -2,9 +2,9 @@
 #define DEVICE_CONTROL_H
 
 #include <Arduino.h>
-#include "JsonProvider.h"
+#include "Device.h"
 
-class DeviceControl : public JsonProvider {
+class DeviceControl : public Device {
 protected:
     String _name;
 

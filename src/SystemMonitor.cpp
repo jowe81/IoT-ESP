@@ -68,3 +68,7 @@ void SystemMonitor::processJson(JsonObject& doc) {
 int SystemMonitor::getLoopDelay() {
     return _loopDelay;
 }
+
+const String& SystemMonitor::getName() {
+    return _name;
+}

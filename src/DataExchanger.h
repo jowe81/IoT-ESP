@@ -13,7 +13,7 @@ public:
     DataExchanger(const char* name, const char* deviceId, unsigned long interval, const char* url, WifiConnection& wifi, int eepromOffset);
     void begin();
     void addProvider(JsonProvider* provider);
-    void exchange(bool force = false, const char* reason = "");
+    bool exchange(bool force = false, const char* reason = "");
     void addToJson(JsonObject& doc) override;
     void processJson(JsonObject& doc) override;
 

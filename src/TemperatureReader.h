@@ -4,9 +4,9 @@
 #include <Arduino.h>
 #include <OneWire.h>
 #include <DallasTemperature.h>
-#include "JsonProvider.h"
+#include "Device.h"
 
-class TemperatureReader : public JsonProvider {
+class TemperatureReader : public Device {
     private:
         OneWire _oneWire;
         DallasTemperature _sensors;
@@ -19,6 +19,7 @@ class TemperatureReader : public JsonProvider {
     public:
         TemperatureReader(int pin, String name, int sensorIndex = 0);
         void begin();
+        void update() override {} // No periodic update needed, reads on demand
         float getTemperature();
         void addToJson(JsonObject& doc) override;
         const String& getName();

@@ -2,9 +2,10 @@
 #define PUSH_BUTTON_MONITOR_H
 
 #include <Arduino.h>
-#include "JsonProvider.h"
+#include "Device.h"
+#include "DeviceControl.h"
 
-class PushButtonMonitor : public JsonProvider {
+class PushButtonMonitor : public Device {
     private:
         int _pin;
         String _name;
@@ -13,10 +14,16 @@ class PushButtonMonitor : public JsonProvider {
         bool _state;
         unsigned long _lastDebounceTime;
         bool _localAction;
+        DeviceControl* _targetDevice;
+        bool _triggerExchange;
 
     public:
         static constexpr const char* TYPE = "PushButtonMonitor";
         PushButtonMonitor(String name, int pin, bool activeLow = true);
+        void setTarget(DeviceControl* target);
+        void update() override;
+        bool shouldTriggerExchange() override;
+        void resetTriggerExchange() override;
         bool isPressed();
         bool checkPressed();
         void addToJson(JsonObject& doc) override;

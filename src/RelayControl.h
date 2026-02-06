@@ -34,6 +34,7 @@ class RelayControl : public DeviceControl {
         void setAutoOffTimer(unsigned long duration);
         void setFadeDuration(int duration);
         void update();
+        void refreshState() override;
         void processJson(JsonObject& doc) override;
         void addToJson(JsonObject& doc) override;
         const String& getName();

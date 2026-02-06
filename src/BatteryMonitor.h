@@ -2,10 +2,10 @@
 #define BATTERY_MONITOR_H
 
 #include <Arduino.h>
-#include "JsonProvider.h"
+#include "Device.h"
 #include <vector>
 
-class BatteryMonitor : public JsonProvider{
+class BatteryMonitor : public Device {
   private:
     static constexpr float MIN_SANITY_VOLTAGE = 9.0;
     static constexpr float MAX_SANITY_VOLTAGE = 20.0;

@@ -44,12 +44,12 @@ void DataExchanger::addProvider(JsonProvider* provider) {
     _providers.push_back(provider);
 }
 
-void DataExchanger::exchange(bool force, const char* reason) {
+bool DataExchanger::exchange(bool force, const char* reason) {
     unsigned long currentMillis = millis();
 
     // Check if the interval has elapsed
     if (!force && (currentMillis - _lastExchangeTime < _interval)) {
-        return;
+        return true;
     }
 
     _lastExchangeTime = currentMillis;
@@ -96,7 +96,9 @@ void DataExchanger::exchange(bool force, const char* reason) {
         } else {
             Log.error("DataExchanger: Failed to parse response JSON.");
         }
+        return true;
     }
+    return false;
 }
 
 void DataExchanger::addToJson(JsonObject& doc) {

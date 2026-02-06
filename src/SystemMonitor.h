@@ -2,9 +2,9 @@
 #define SYSTEM_MONITOR_H
 
 #include <Arduino.h>
-#include "JsonProvider.h"
+#include "Device.h"
 
-class SystemMonitor : public JsonProvider {
+class SystemMonitor : public Device {
 private:
     String _deviceId;
     String _name;
@@ -13,6 +13,8 @@ private:
 public:
     static constexpr const char* TYPE = "SystemMonitor";
     SystemMonitor(String name, String deviceId);
+    void begin() override {}
+    void update() override {}
     void addToJson(JsonObject& doc) override;
     uint32_t getFreeHeap();
     uint32_t getLargestBlock();
@@ -20,6 +22,7 @@ public:
     unsigned long getUptime();
     void processJson(JsonObject& doc) override;
     int getLoopDelay();
+    const String& getName() override;
 };
 
 #endif

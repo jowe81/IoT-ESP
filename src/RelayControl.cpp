@@ -160,6 +160,10 @@ void RelayControl::update() {
     }
 }
 
+void RelayControl::refreshState() {
+    _updateHardware();
+}
+
 void RelayControl::processJson(JsonObject& doc) {
     if (doc.containsKey(_name)) {
         if (doc[_name].is<JsonObject>()) {
