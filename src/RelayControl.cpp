@@ -8,6 +8,7 @@ int RelayControl::_nextLedcChannel = 0;
 struct RelayConfig {
     unsigned long autoOffTimer;
     int fadeDuration;
+    int percentage;
     uint32_t magic;
 };
 
@@ -43,12 +44,15 @@ void RelayControl::loadConfig() {
     if (config.magic == 0xCAFEBABE) {
         _autoOffTimer = config.autoOffTimer;
         _fadeDuration = config.fadeDuration;
+        if (config.percentage >= 0 && config.percentage <= 100) {
+            _percentage = config.percentage;
+        }
     }
 }
 
 void RelayControl::saveConfig() {
     if (_eepromOffset < 0) return;
-    RelayConfig config = { _autoOffTimer, _fadeDuration, 0xCAFEBABE };
+    RelayConfig config = { _autoOffTimer, _fadeDuration, _percentage, 0xCAFEBABE };
     EEPROM.put(_eepromOffset, config);
     EEPROM.commit();
 }
@@ -75,7 +79,11 @@ bool RelayControl::isOn() {
 void RelayControl::setPercentage(int percentage) {
     if (percentage < 0) percentage = 0;
     if (percentage > 100) percentage = 100;
-    _percentage = percentage;
+    
+    if (_percentage != percentage) {
+        _percentage = percentage;
+        saveConfig();
+    }
 
     // Only update hardware if we are currently ON.
     // This allows setting the dim level without turning the light on.
