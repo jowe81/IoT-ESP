@@ -19,6 +19,7 @@ class WifiConnection {
     unsigned long _lastReconnectAttempt;
     WiFiSleepType _sleepMode;
     const unsigned long _reconnectInterval = 10000; // Retry every 10 seconds
+    bool _wasConnected;
 
   public:
     WifiConnection(const char* ssid, const char* password, WiFiSleepType sleepMode = WIFI_NONE_SLEEP);

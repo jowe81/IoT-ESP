@@ -8,7 +8,7 @@
 // --- Identity ---
 const char* DEVICE_ID = "recroom_01";
 // Using GPIO 2 (Built-in LED on NodeMCU) for status indication
-DataExchanger dataExchanger("dataExchanger", DEVICE_ID, 60000, "http://server.wnet.wn:8101/automation_api", wifi, 2);
+DataExchanger dataExchanger("dataExchanger", DEVICE_ID, 60000, "http://server.wnet.wn:8101/automation_api", "mqtt://server.wnet.wn:1883", wifi, 2);
 
 // --- Devices ---
 static SystemMonitor sysMon("systemMonitor", DEVICE_ID);

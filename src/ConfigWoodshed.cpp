@@ -7,14 +7,14 @@
 
 // --- Identity ---
 const char* DEVICE_ID = "woodshed_01";
-DataExchanger dataExchanger("dataExchanger", DEVICE_ID, 60000, "http://server.wnet.wn:8101/automation_api", wifi, 32);
+DataExchanger dataExchanger("dataExchanger", DEVICE_ID, 60000, "http://server.wnet.wn:8101/automation_api", "mqtt://server.wnet.wn:1883", wifi, 32);
 
 // --- Devices ---
 static SystemMonitor sysMon("systemMonitor", DEVICE_ID);
 static BatteryMonitor batMon("batteryMonitor", A0, 0.00484, 11.9, 11.5, 0, 60);
-static RelayControl lightInside("lightInside", D6, false, true, 200, 200);
-static RelayControl lightOutside("lightOutside", D2, false, true, 200, 220);
-static RelayControl nightLight("nightLight", D1, false, true, 200, 240);
+static RelayControl lightInside("lightInside", D6, false, true, 200, 300);
+static RelayControl lightOutside("lightOutside", D2, false, true, 200, 320);
+static RelayControl nightLight("nightLight", D1, false, true, 200, 340);
 static PushButtonMonitor lightSwitchForOutside("lightSwitchOutside", D3, true);
 static PushButtonMonitor lightSwitchForInside("lightSwitchInside", D7, true);
 static TemperatureReader tempSensor(D5, "tempOutside");

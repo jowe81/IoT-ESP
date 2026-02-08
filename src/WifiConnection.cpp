@@ -8,7 +8,7 @@
 #include <WiFiClient.h>
 
 WifiConnection::WifiConnection(const char* ssid, const char* password, WiFiSleepType sleepMode) 
-    : _ssid(ssid), _password(password), _lastReconnectAttempt(0), _sleepMode(sleepMode) {
+    : _ssid(ssid), _password(password), _lastReconnectAttempt(0), _sleepMode(sleepMode), _wasConnected(false) {
 }
 
 void WifiConnection::begin() {
@@ -28,10 +28,16 @@ void WifiConnection::begin() {
 }
 
 void WifiConnection::update() {
-    // If connected, do nothing
     if (WiFi.status() == WL_CONNECTED) {
+        if (!_wasConnected) {
+            Log.info("WiFi Connected!");
+            Log.info(WiFi.localIP().toString().c_str());
+            _wasConnected = true;
+        }
         return;
     }
+    
+    _wasConnected = false;
 
     // If not connected, check if it's time to retry
     unsigned long currentMillis = millis();

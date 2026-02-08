@@ -206,7 +206,9 @@ void RelayControl::processJson(JsonObject& doc) {
 
 void RelayControl::addToJson(JsonObject& doc) {
     JsonObject nested = doc.createNestedObject(_name);
-    nested["type"] = "RelayControl";
+    nested["type"] = "DeviceControl";
+    nested["subType"] = "RelayControl";
+    nested["pwm"] = _pwm;    
     nested["isOn"] = isOn();
     nested["percentage"] = _percentage;
     nested["frequency"] = _frequency;
