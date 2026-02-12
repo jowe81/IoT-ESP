@@ -35,6 +35,8 @@ private:
     String _requestBody;
     String _pendingReason;
     String _pendingAck;
+    bool _triggerExchange;
+    bool _startupSent;
     WiFiClient _wifiClient;
     PubSubClient _mqttClient;
     void loadConfig();

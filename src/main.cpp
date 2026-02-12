@@ -47,9 +47,6 @@ void setup() {
     // Turn off lights on startup.
     turnOffLights();
 
-    // Send initial transmission.
-    dataExchanger.exchange(true, "startup");
-
     Log.info("Setup done.");
 }
 

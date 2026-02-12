@@ -21,7 +21,7 @@ struct DataExchangerConfig {
 };
 
 DataExchanger::DataExchanger(const char* name, const char* deviceId, unsigned long interval, const char* httpUrl, const char* mqttUrl, WifiConnection& wifi, int eepromOffset)
-    : _name(name), _deviceId(deviceId), _eepromOffset(eepromOffset), _interval(interval), _httpUrl(httpUrl), _mqttUrl(mqttUrl), _wifi(wifi), _lastExchangeTime(0), _lastMqttConnectionAttempt(0), _doc(2048) {
+    : _name(name), _deviceId(deviceId), _eepromOffset(eepromOffset), _interval(interval), _httpUrl(httpUrl), _mqttUrl(mqttUrl), _wifi(wifi), _lastExchangeTime(0), _lastMqttConnectionAttempt(0), _doc(2048), _triggerExchange(false) {
     
     _exchangerInstance = this;
     _mqttClient.setClient(_wifiClient);
@@ -107,6 +107,12 @@ bool DataExchanger::exchange(bool force, const char* reason) {
         } else {
             _mqttClient.loop();
         }
+    }
+
+    if (_triggerExchange) {
+        force = true;
+        if (!reason || !*reason) reason = "commandAck";
+        _triggerExchange = false;
     }
 
     // Check if the interval has elapsed
@@ -248,7 +254,7 @@ void DataExchanger::handleMqttMessage(char* topic, byte* payload, unsigned int l
     Log.info(payloadStr);
     free(payloadStr);
 
-    StaticJsonDocument<1024> responseDoc;
+    DynamicJsonDocument responseDoc(1024);
     // Cast payload to (const byte*) to force ArduinoJson to copy the data.
     // Otherwise, it uses pointers to the MQTT buffer, which gets overwritten when we publish the Ack.
     DeserializationError error = deserializeJson(responseDoc, (const byte*)payload, length);
@@ -262,7 +268,7 @@ void DataExchanger::handleMqttMessage(char* topic, byte* payload, unsigned int l
         }
 
         if (_pendingAck.length() > 0) {
-            exchange(true, "commandAck");
+            _triggerExchange = true;
         }
     } else {
         Log.error("DataExchanger: Failed to parse MQTT message.");
