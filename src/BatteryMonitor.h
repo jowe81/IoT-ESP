@@ -5,6 +5,8 @@
 #include "Device.h"
 #include <vector>
 
+class TemperatureReader;
+
 class BatteryMonitor : public Device {
   private:
     static constexpr float MIN_SANITY_VOLTAGE = 9.0;
@@ -17,7 +19,11 @@ class BatteryMonitor : public Device {
     float _ratio;
     float _lowThreshold;
     float _criticalThreshold;
-    float _voltageAdjustment;
+    float _voltageSensorAdjustmentFactor;
+    float _temperature;
+    TemperatureReader* _tempReader;
+    String _batteryType;
+    float _batteryVoltage;
     int _readingsBufferSize;
     std::vector<float> _readings;
     int _readingsIndex;
@@ -31,10 +37,11 @@ class BatteryMonitor : public Device {
     bool _criticalEvent;
     void loadConfig();
     void saveConfig();
+    float applyAdjustment(float voltage, bool reverse = false);
 
   public:
     static constexpr const char* TYPE = "BatteryMonitor";
-    BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize);
+    BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize, TemperatureReader* tempReader = nullptr, float temperature = 25.0);
     void begin();
     void update();
     float getVoltage();

@@ -1,5 +1,6 @@
 #include <Arduino.h>
 #include "BatteryMonitor.h"
+#include "TemperatureReader.h"
 #include <ArduinoJson.h>
 #include <EEPROM.h>
 #include "Logger.h"
@@ -9,13 +10,17 @@ struct BatteryConfig {
     float critical;
     int bufferSize;
     float adjustment;
+    float temperature;
+    float batteryVoltage;
+    char batteryType[20];
     uint32_t magic;
 };
 
 // Constructor.
-BatteryMonitor::BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize) 
+BatteryMonitor::BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize, TemperatureReader* tempReader, float temperature) 
     : _pin(pin), _eepromOffset(eepromOffset), _name(name), _ratio(ratio), _lowThreshold(lowThreshold), _criticalThreshold(criticalThreshold),
-      _voltageAdjustment(1.0), _readingsBufferSize(readingsBufferSize),
+      _voltageSensorAdjustmentFactor(1.0), _temperature(temperature), _tempReader(tempReader), _batteryType("flooded"), _batteryVoltage(12.0),
+      _readingsBufferSize(readingsBufferSize),
       _readingsIndex(0), _readingsCount(0), _lastReadingTime(0), _lastAcceptedReadingTime(0),
       _lastKnownVoltage(0.0),
       _lowState(false), _criticalState(false), _lowEvent(false), _criticalEvent(false) {
@@ -51,16 +56,32 @@ void BatteryMonitor::loadConfig() {
             }
 
             if (config.adjustment > 0.0) {
-                _voltageAdjustment = config.adjustment;
+                _voltageSensorAdjustmentFactor = config.adjustment;
             }
+
+            _temperature = config.temperature;
+            _batteryVoltage = config.batteryVoltage;
+            // Ensure null termination
+            config.batteryType[sizeof(config.batteryType) - 1] = 0;
+            _batteryType = String(config.batteryType);
         }
     }
 }
 
 void BatteryMonitor::saveConfig() {
-    BatteryConfig config = { _lowThreshold, _criticalThreshold, _readingsBufferSize, _voltageAdjustment, 0xCAFEBABE };
+    BatteryConfig config = { _lowThreshold, _criticalThreshold, _readingsBufferSize, _voltageSensorAdjustmentFactor, _temperature, _batteryVoltage, "", 0xCAFEBABE };
+    strncpy(config.batteryType, _batteryType.c_str(), sizeof(config.batteryType) - 1);
+    config.batteryType[sizeof(config.batteryType) - 1] = 0;
     EEPROM.put(_eepromOffset, config);
     EEPROM.commit();
+}
+
+float BatteryMonitor::applyAdjustment(float voltage, bool reverse) {
+    if (_batteryType == "flooded") {
+        float adjustment = (25.0 - _temperature) * 0.024;
+        return reverse ? (voltage - adjustment) : (voltage + adjustment);
+    }
+    return voltage;
 }
 
 void BatteryMonitor::update() {
@@ -70,6 +91,13 @@ void BatteryMonitor::update() {
 
     if (millis() - _lastReadingTime >= 900) {
         _lastReadingTime = millis();
+
+        if (_tempReader != nullptr) {
+            float t = _tempReader->getTemperature();
+            if (!isnan(t)) {
+                _temperature = t;
+            }
+        }
         
         // Safety check: If we haven't accepted a valid reading in 30 seconds,
         // assume the voltage has shifted significantly (e.g. charger connected)
@@ -90,11 +118,13 @@ void BatteryMonitor::update() {
             
             // Convert 10-bit ADC (0-1023) to voltage based on the divider
             #ifdef ESP32
-                //float voltage = (raw / 4095.0) * _ratio * _voltageAdjustment;
-                float voltage = raw * _ratio * _voltageAdjustment;
+                //float voltage = (raw / 4095.0) * _ratio * _voltageSensorAdjustmentFactor;
+                float voltage = raw * _ratio * _voltageSensorAdjustmentFactor;
             #else
-                float voltage = (raw / 1023.0) * 3.3 * _ratio * _voltageAdjustment;
+                float voltage = (raw / 1023.0) * 3.3 * _ratio * _voltageSensorAdjustmentFactor;
             #endif
+
+            voltage = applyAdjustment(voltage);
 
             bool isOutlier = false;
 
@@ -199,9 +229,14 @@ void BatteryMonitor::addToJson(JsonObject& doc) {
     
     if (voltage > 0) {
         nested["voltage"] = voltage;
+        nested["voltageRaw"] = applyAdjustment(voltage, true);
+
         nested["thresholdLow"] = _lowThreshold;
         nested["thresholdCritical"] = _criticalThreshold;
-        nested["adjustment"] = _voltageAdjustment;
+        nested["adjustment"] = _voltageSensorAdjustmentFactor;
+        nested["temperature"] = _temperature;
+        nested["batteryType"] = _batteryType;
+        nested["batteryVoltage"] = _batteryVoltage;
         nested["isLow"] = isLow();
         nested["isCritical"] = isCritical();
         nested["isStale"] = (_readingsCount < totalReadings);
@@ -210,7 +245,7 @@ void BatteryMonitor::addToJson(JsonObject& doc) {
         int raw = analogRead(_pin);
         nested["isBuffering"] = true;
         nested["raw"] = raw;
-        nested["momentary"] = raw * _ratio * _voltageAdjustment;
+        nested["momentary"] = raw * _ratio * _voltageSensorAdjustmentFactor;
         nested["readingsCount"] = _readingsCount;
     }
 }
@@ -234,7 +269,16 @@ void BatteryMonitor::processJson(JsonObject& doc) {
             }
         }
         if (config.containsKey("setAdjustment")) {
-            _voltageAdjustment = config["setAdjustment"].as<float>();
+            _voltageSensorAdjustmentFactor = config["setAdjustment"].as<float>();
+        }
+        if (config.containsKey("setTemperature")) {
+            _temperature = config["setTemperature"].as<float>();
+        }
+        if (config.containsKey("setBatteryType")) {
+            _batteryType = config["setBatteryType"].as<String>();
+        }
+        if (config.containsKey("setBatteryVoltage")) {
+            _batteryVoltage = config["setBatteryVoltage"].as<float>();
         }
         saveConfig();
     }

@@ -15,11 +15,12 @@ class TemperatureReader : public Device {
         float _lastGoodTemp;
         int _badReadingCount;
         int _maxBadReadings;
+        unsigned long _lastUpdateTime;
 
     public:
         TemperatureReader(int pin, String name, int sensorIndex = 0);
         void begin();
-        void update() override {} // No periodic update needed, reads on demand
+        void update() override;
         float getTemperature();
         void addToJson(JsonObject& doc) override;
         const String& getName();
