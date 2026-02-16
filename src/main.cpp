@@ -16,8 +16,8 @@ void turnOffLights() {
 void setup() {
     Log.begin();
     Log.info("Starting up...");
-    // Reserve 512 bytes for config (BatteryMonitor uses 0-12, DataExchanger uses 32+)
-    EEPROM.begin(512);
+    // Reserve 1024 bytes for config to accommodate larger DataExchanger and multiple devices
+    EEPROM.begin(1024);
     
     // Initialize configuration (instantiate objects, wire them up)
     setupConfiguration();

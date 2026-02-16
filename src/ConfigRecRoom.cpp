@@ -1,6 +1,6 @@
 #include "Configuration.h"
 #include "PushButtonMonitor.h"
-#include "TemperatureReader.h"
+#include "DS18B20.h"
 #include "RelayControl.h"
 
 #ifdef CONFIG_RECROOM
@@ -19,8 +19,8 @@ static PushButtonMonitor btn2("btn2", D3, true);
 static PushButtonMonitor btn3("btn3", D7, true);
 
 // 2 Temperature Readers (D5, D6)
-static TemperatureReader temp1(D5, "temp1", 0);
-static TemperatureReader temp2(D5, "temp2", 1);
+static DS18B20 temp1(D5, "temp1", 0, 300);
+static DS18B20 temp2(D5, "temp2", 1, 310);
 
 // Status LED (Built-in LED is usually GPIO 2, Active Low)
 static RelayControl statusLed("statusLed", 2, true);

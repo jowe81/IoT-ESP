@@ -24,10 +24,14 @@ class SHT31 : public Device {
         int _readingsCount;
         bool _available;
         bool _heaterOn;
+        float _tempOffset;
+        float _humOffset;
 
         struct Config {
             unsigned long interval;
             bool heaterOn;
+            float tempOffset;
+            float humOffset;
             uint32_t magic;
         };
 
@@ -35,7 +39,7 @@ class SHT31 : public Device {
         void saveConfig();
 
     public:
-        SHT31(String name, uint8_t address = 0x44, unsigned long interval = 60000, int eepromOffset = -1);
+        SHT31(String name, uint8_t address = 0x44, unsigned long interval = 20000, int eepromOffset = -1);
         void begin() override;
         void update() override;
         void addToJson(JsonObject& doc) override;

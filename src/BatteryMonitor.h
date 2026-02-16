@@ -5,7 +5,7 @@
 #include "Device.h"
 #include <vector>
 
-class TemperatureReader;
+class DS18B20;
 
 class BatteryMonitor : public Device {
   private:
@@ -21,7 +21,7 @@ class BatteryMonitor : public Device {
     float _criticalThreshold;
     float _voltageSensorAdjustmentFactor;
     float _temperature;
-    TemperatureReader* _tempReader;
+    DS18B20* _tempReader;
     String _batteryType;
     float _batteryVoltage;
     int _readingsBufferSize;
@@ -41,7 +41,7 @@ class BatteryMonitor : public Device {
 
   public:
     static constexpr const char* TYPE = "BatteryMonitor";
-    BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize, TemperatureReader* tempReader = nullptr, float temperature = 25.0);
+    BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize, DS18B20* tempReader = nullptr, float temperature = 25.0);
     void begin();
     void update();
     float getVoltage();

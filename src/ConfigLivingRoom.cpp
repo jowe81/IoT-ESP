@@ -1,6 +1,6 @@
 #include "Configuration.h"
 #include "PushButtonMonitor.h"
-#include "TemperatureReader.h"
+#include "DS18B20.h"
 #include "RelayControl.h"
 #include "RGBControl.h"
 #include "SHT31.h"
@@ -20,7 +20,7 @@ static SystemMonitor sysMon("systemMonitor", DEVICE_ID);
 static PushButtonMonitor btn1("btn1", D3, true);
 
 // Temperature Reader (D5)
-static TemperatureReader temp1(D5, "temp1", 0);
+static DS18B20 temp1(D5, "temp1", 0, 430);
 
 // SHT31 Sensor (I2C: D2=SDA, D1=SCL)
 static SHT31 shtSensor("shtSensor", 0x44, 60000, 400);
@@ -33,18 +33,18 @@ static RGBControl rgbStrip("woodRackLights", D8, D6, D7, false, 1000, 300);
 static RelayControl statusLed("statusLed", 2, true);
 
 void setupConfiguration() {
-    // 1. Assign specific pointers for main loop logic
+    // Assign specific pointers for main loop logic
     systemMonitor = &sysMon;
     // systemBattery is not used in this config (remains nullptr)
     statusIndicator = &statusLed;
 
-    // 2. Configure wiring
+    // Configure wiring
     btn1.setTarget(&rgbStrip);
 
     // Initialize I2C on D2 (SDA) and D1 (SCL)
     Wire.begin(D2, D1);
 
-    // 3. Populate generic device list (for update loop)
+    // Populate generic device list (for update loop)
     allDevices.push_back(&sysMon);
     allDevices.push_back(&btn1);
     allDevices.push_back(&temp1);
@@ -54,7 +54,7 @@ void setupConfiguration() {
 
     switchableDevices.push_back(&rgbStrip);
 
-    // 4. Register providers to DataExchanger
+    // Register providers to DataExchanger
     dataExchanger.addProvider(&sysMon);
     dataExchanger.addProvider(&btn1);
     dataExchanger.addProvider(&temp1);

@@ -1,7 +1,7 @@
 #include "Configuration.h"
 #include "RelayControl.h"
 #include "PushButtonMonitor.h"
-#include "TemperatureReader.h"
+#include "DS18B20.h"
 #include "INA219CurrentReader.h"
 #include "RGBControl.h"
 #include "BME280.h"
@@ -14,10 +14,10 @@ DataExchanger dataExchanger("dataExchanger", DEVICE_ID, 60000, "http://server.wn
 
 // --- Devices ---
 static SystemMonitor sysMon("systemMonitor", DEVICE_ID);
-static TemperatureReader tempOutside(D5, "tempOutside", 0);
-static TemperatureReader tempControlBox(D5, "controlBox", 1);
+static DS18B20 tempOutside(D5, "tempOutside", 0, 530);
+static DS18B20 tempControlBox(D5, "controlBox", 1, 540);
 static BatteryMonitor batMon("batteryMonitor", A0, 0.00484, 11.9, 11.5, 420, 60, &tempOutside);
-static RGBControl rgbStrip("rgbStrip", D1, D2, D6, false, 1000, 100);
+static RGBControl rgbStrip("rgbStrip", D1, D2, D6, false, 1000, 500);
 static RelayControl lightInside("lightInside", 32, false, true, 200, 300);
 static RelayControl lightOutside("lightOutside", 33, false, true, 200, 320);
 static RelayControl statusLed("statusLed", LED_BUILTIN, false);

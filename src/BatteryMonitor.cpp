@@ -1,6 +1,6 @@
 #include <Arduino.h>
 #include "BatteryMonitor.h"
-#include "TemperatureReader.h"
+#include "DS18B20.h"
 #include <ArduinoJson.h>
 #include <EEPROM.h>
 #include "Logger.h"
@@ -17,7 +17,7 @@ struct BatteryConfig {
 };
 
 // Constructor.
-BatteryMonitor::BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize, TemperatureReader* tempReader, float temperature) 
+BatteryMonitor::BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize, DS18B20* tempReader, float temperature) 
     : _pin(pin), _eepromOffset(eepromOffset), _name(name), _ratio(ratio), _lowThreshold(lowThreshold), _criticalThreshold(criticalThreshold),
       _voltageSensorAdjustmentFactor(1.0), _temperature(temperature), _tempReader(tempReader), _batteryType("flooded"), _batteryVoltage(12.0),
       _readingsBufferSize(readingsBufferSize),

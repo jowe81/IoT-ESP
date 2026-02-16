@@ -4,7 +4,7 @@
 SHT31::SHT31(String name, uint8_t address, unsigned long interval, int eepromOffset) 
     : _name(name), _address(address), _interval(interval), _lastUpdateTime(0), _eepromOffset(eepromOffset),
       _temperature(NAN), _humidity(NAN),
-      _tempSum(0), _humSum(0), _readingsCount(0), _available(false), _heaterOn(false) {
+      _tempSum(0), _humSum(0), _readingsCount(0), _available(false), _heaterOn(false), _tempOffset(0.0), _humOffset(0.0) {
 }
 
 void SHT31::begin() {
@@ -31,17 +31,19 @@ void SHT31::loadConfig() {
     Config config;
     EEPROM.get(_eepromOffset, config);
     // Magic number to validate EEPROM data
-    if (config.magic == 0xDEADBEEF) {
+    if (config.magic == 0xDEADBEE1) {
         if (config.interval >= 1000) {
             _interval = config.interval;
         }
         _heaterOn = config.heaterOn;
+        _tempOffset = config.tempOffset;
+        _humOffset = config.humOffset;
     }
 }
 
 void SHT31::saveConfig() {
     if (_eepromOffset < 0) return;
-    Config config = { _interval, _heaterOn, 0xDEADBEEF };
+    Config config = { _interval, _heaterOn, _tempOffset, _humOffset, 0xDEADBEE1 };
     EEPROM.put(_eepromOffset, config);
     EEPROM.commit();
 }
@@ -56,6 +58,9 @@ void SHT31::update() {
         float h = _sht.readHumidity();
 
         if (!isnan(t) && !isnan(h)) {
+            t += _tempOffset;
+            h += _humOffset;
+            
             _temperature = t;
             _humidity = h;
             _tempSum += t;
@@ -72,6 +77,8 @@ void SHT31::addToJson(JsonObject& doc) {
     
     if (_available) {
         nested["heater"] = _heaterOn;
+        nested["tempCOffset"] = serialized(String(_tempOffset, 2));
+        nested["humOffset"] = serialized(String(_humOffset, 2));
 
         float t = _temperature;
         float h = _humidity;
@@ -110,6 +117,16 @@ void SHT31::processJson(JsonObject& doc) {
                 if (_available) _sht.heater(_heaterOn);
                 changed = true;
             }
+        }
+
+        if (config.containsKey("setTempCOffset")) {
+            _tempOffset = config["setTempCOffset"].as<float>();
+            changed = true;
+        }
+
+        if (config.containsKey("setHumOffset")) {
+            _humOffset = config["setHumOffset"].as<float>();
+            changed = true;
         }
 
         if (changed) saveConfig();
