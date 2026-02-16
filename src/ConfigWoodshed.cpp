@@ -4,6 +4,7 @@
 #include "TemperatureReader.h"
 #include "INA219CurrentReader.h"
 #include "RGBControl.h"
+#include "BME280.h"
 
 #ifdef CONFIG_WOODSHED
 
@@ -25,6 +26,7 @@ static PushButtonMonitor lightSwitchForOutside("lightSwitchOutside", D3, true);
 static PushButtonMonitor lightSwitchForInside("lightSwitchInside", D7, true);
 static INA219CurrentReader loadMeter("loadMeter", 0x40, 1000, 360, 128);
 static INA219CurrentReader chargeMeter("chargeMeter", 0x41, 1000, 390, 128);
+static BME280Reader bmeSensor("bmeSensor", 0x76, 60000, 480);
 
 void setupConfiguration() {
     // 1. Assign specific pointers for main loop logic
@@ -49,6 +51,7 @@ void setupConfiguration() {
     allDevices.push_back(&lightSwitchForInside);
     allDevices.push_back(&loadMeter);
     allDevices.push_back(&chargeMeter);
+    allDevices.push_back(&bmeSensor);
 
     // 4. Populate switchable list (for group operations like turnOffLights)
     switchableDevices.push_back(&lightInside);
@@ -67,6 +70,7 @@ void setupConfiguration() {
     dataExchanger.addProvider(&lightSwitchForInside);
     dataExchanger.addProvider(&loadMeter);
     dataExchanger.addProvider(&chargeMeter);
+    dataExchanger.addProvider(&bmeSensor);
 }
 
 #endif
