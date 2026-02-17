@@ -124,15 +124,17 @@ bool DataExchanger::exchange(bool force, const char* reason) {
 
     // Create JSON payload
     _doc.clear();
-    JsonObject root = _doc.to<JsonObject>();
+    JsonArray root = _doc.to<JsonArray>();
 
     addToJson(root);
 
     // Add the reason/trigger for the transmission to the exchanger data.
-    if (root.containsKey(_name)) {
-        JsonObject nested = root[_name];
-        const char* actualReason = (reason && *reason) ? reason : (force ? "forced" : "scheduled");
-        nested["trigger"] = actualReason;
+    if (root.size() > 0) {
+        JsonObject nested = root[root.size() - 1];
+        if (nested["name"] == _name) {
+            const char* actualReason = (reason && *reason) ? reason : (force ? "forced" : "scheduled");
+            nested["trigger"] = actualReason;
+        }
     }
 
     // Add providers to JSON
@@ -190,14 +192,16 @@ bool DataExchanger::exchange(bool force, const char* reason) {
     return false;
 }
 
-void DataExchanger::addToJson(JsonObject& doc) {
-    JsonObject nested = doc.createNestedObject(_name);
-    nested["type"] = "DataExchanger";
+void DataExchanger::addToJson(JsonArray& doc) {
+    JsonObject nested = doc.createNestedObject();
+    nested["type"] = "System";
+    nested["subtype"] = "DataExchanger";
+    nested["name"] = _name;
     nested["interval"] = _interval;
     nested["httpUrl"] = _httpUrl;
     nested["mqttUrl"] = _mqttUrl;
     if (_pendingAck.length() > 0) {
-        doc["_ack"] = _pendingAck;
+        nested["_ack"] = _pendingAck;
     }
 }
 

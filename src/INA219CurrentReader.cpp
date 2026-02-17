@@ -52,10 +52,11 @@ float INA219CurrentReader::getAverageCurrent() {
     return (float)(_currentSum / _readingsCount);
 }
 
-void INA219CurrentReader::addToJson(JsonObject& doc) {
-    JsonObject nested = doc.createNestedObject(_name);
-    
-    nested["type"] = "CurrentReader";
+void INA219CurrentReader::addToJson(JsonArray& doc) {
+    JsonObject nested = doc.createNestedObject();
+    nested["type"] = "Sensor";
+    nested["subtype"] = "INA219";
+    nested["name"] = _name;
     nested["current_mA"] = getAverageCurrent();
     nested["shunt_mV"] = _ina.getShuntVoltage_mV();
     nested["voltage_V"] = _ina.getBusVoltage_V();

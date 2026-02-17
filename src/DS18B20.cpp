@@ -40,10 +40,12 @@ float DS18B20::getTemperature() {
     return NAN;
 }
 
-void DS18B20::addToJson(JsonObject& doc) {
+void DS18B20::addToJson(JsonArray& doc) {
     float tempC = getTemperature();
-    JsonObject nested = doc.createNestedObject(_name);
-    nested["type"] = "DS18B20";
+    JsonObject nested = doc.createNestedObject();
+    nested["type"] = "Sensor";
+    nested["subtype"] = "DS18B20";
+    nested["name"] = _name;
     nested["tempC"] = tempC;
     nested["tempF"] = DallasTemperature::toFahrenheit(tempC);
     nested["maxBadReadings"] = _maxBadReadings;

@@ -42,7 +42,7 @@ class SHT31 : public Device {
         SHT31(String name, uint8_t address = 0x44, unsigned long interval = 20000, int eepromOffset = -1);
         void begin() override;
         void update() override;
-        void addToJson(JsonObject& doc) override;
+        void addToJson(JsonArray& doc) override;
         void processJson(JsonObject& doc) override;
         const String& getName() override;
 };

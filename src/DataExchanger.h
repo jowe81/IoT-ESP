@@ -16,7 +16,7 @@ public:
     void begin();
     void addProvider(JsonProvider* provider);
     bool exchange(bool force = false, const char* reason = "");
-    void addToJson(JsonObject& doc) override;
+    void addToJson(JsonArray& doc) override;
     void processJson(JsonObject& doc) override;
     void handleMqttMessage(char* topic, byte* payload, unsigned int length);
 

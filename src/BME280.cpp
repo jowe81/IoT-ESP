@@ -77,9 +77,11 @@ void BME280Reader::update() {
     }
 }
 
-void BME280Reader::addToJson(JsonObject& doc) {
-    JsonObject nested = doc.createNestedObject(_name);
-    nested["type"] = "BME280Reader";
+void BME280Reader::addToJson(JsonArray& doc) {
+    JsonObject nested = doc.createNestedObject();
+    nested["type"] = "Sensor";
+    nested["subtype"] = "BME280";
+    nested["name"] = _name;
     nested["available"] = _available;
     nested["interval"] = _interval;
     

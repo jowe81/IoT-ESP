@@ -9,7 +9,6 @@ protected:
     String _name;
 
 public:
-    static constexpr const char* TYPE = "DeviceControl";
     
     DeviceControl(String name) : _name(name) {}
     virtual ~DeviceControl() {}
@@ -19,9 +18,10 @@ public:
     virtual void toggle() = 0;
     virtual bool isOn() = 0;
 
-    void addToJson(JsonObject& doc) override {
-        JsonObject nested = doc.createNestedObject(_name);
-        nested["type"] = TYPE;
+    void addToJson(JsonArray& doc) override {
+        JsonObject nested = doc.createNestedObject();
+        nested["type"] = "DeviceControl";
+        nested["name"] = _name;
         nested["isOn"] = isOn();
     }
 };

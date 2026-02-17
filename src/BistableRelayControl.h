@@ -25,7 +25,7 @@ class BistableRelayControl : public DeviceControl {
         void setAutoOffTimer(unsigned long duration);
         void update();
         void processJson(JsonObject& doc) override;
-        void addToJson(JsonObject& doc) override;
+        void addToJson(JsonArray& doc) override;
         const String& getName();
 
     private:

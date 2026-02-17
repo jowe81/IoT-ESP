@@ -107,10 +107,11 @@ void BistableRelayControl::processJson(JsonObject& doc) {
     }
 }
 
-void BistableRelayControl::addToJson(JsonObject& doc) {
-    JsonObject nested = doc.createNestedObject(_name);
+void BistableRelayControl::addToJson(JsonArray& doc) {
+    JsonObject nested = doc.createNestedObject();
     nested["type"] = "DeviceControl";
-    nested["subType"] = "BistableRelayControl";
+    nested["subtype"] = "BistableRelayControl";
+    nested["name"] = _name;
     nested["isOn"] = isOn();
     nested["autoOffTimer"] = _autoOffTimer;
 

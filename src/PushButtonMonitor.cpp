@@ -57,9 +57,11 @@ bool PushButtonMonitor::checkPressed() {
     return false;
 }
 
-void PushButtonMonitor::addToJson(JsonObject& doc) {
-    JsonObject nested = doc.createNestedObject(_name);
-    nested["type"] = TYPE;
+void PushButtonMonitor::addToJson(JsonArray& doc) {
+    JsonObject nested = doc.createNestedObject();
+    nested["type"] = "Sensor";
+    nested["subtype"] = "PushButton";
+    nested["name"] = _name;
     nested["isPressed"] = isPressed();
     nested["localAction"] = _localAction;
 }

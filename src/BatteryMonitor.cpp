@@ -218,13 +218,15 @@ bool BatteryMonitor::gotCritical() {
     return false;
 }
 
-void BatteryMonitor::addToJson(JsonObject& doc) {
+void BatteryMonitor::addToJson(JsonArray& doc) {
     int totalReadings = _readingsBufferSize * READINGS_PER_CYCLE;
 
     float voltage = getVoltage();
 
-    JsonObject nested = doc.createNestedObject(_name);
-    nested["type"] = TYPE;
+    JsonObject nested = doc.createNestedObject();
+    nested["type"] = "System";
+    nested["subtype"] = "BatteryMonitor";
+    nested["name"] = _name;
     nested["bufferSize"] = _readingsBufferSize;
     
     if (voltage > 0) {

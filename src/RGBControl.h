@@ -50,7 +50,7 @@ class RGBControl : public DeviceControl {
         void update() override;
         void refreshState() override;
         void processJson(JsonObject& doc) override;
-        void addToJson(JsonObject& doc) override;
+        void addToJson(JsonArray& doc) override;
         const String& getName() override;
 
     private:

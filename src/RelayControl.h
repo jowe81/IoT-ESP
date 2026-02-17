@@ -36,7 +36,7 @@ class RelayControl : public DeviceControl {
         void update();
         void refreshState() override;
         void processJson(JsonObject& doc) override;
-        void addToJson(JsonObject& doc) override;
+        void addToJson(JsonArray& doc) override;
         const String& getName();
 
     private:

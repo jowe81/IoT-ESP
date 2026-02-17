@@ -6,9 +6,11 @@ SystemMonitor::SystemMonitor(String name, String deviceId) : _deviceId(deviceId)
     }
 }
 
-void SystemMonitor::addToJson(JsonObject& doc) {
-    JsonObject nested = doc.createNestedObject(_name);
-    nested["type"] = TYPE;
+void SystemMonitor::addToJson(JsonArray& doc) {
+    JsonObject nested = doc.createNestedObject();
+    nested["type"] = "System";
+    nested["subtype"] = "SystemMonitor";
+    nested["name"] = _name;
     nested["deviceId"] = _deviceId;
     nested["freeHeap"] = getFreeHeap();
     nested["largestBlock"] = getLargestBlock();

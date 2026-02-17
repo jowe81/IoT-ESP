@@ -278,10 +278,11 @@ void RGBControl::processJson(JsonObject& doc) {
     }
 }
 
-void RGBControl::addToJson(JsonObject& doc) {
-    JsonObject nested = doc.createNestedObject(_name);
+void RGBControl::addToJson(JsonArray& doc) {
+    JsonObject nested = doc.createNestedObject();
     nested["type"] = "DeviceControl";
-    nested["subType"] = "RGBControl";
+    nested["subtype"] = "RGB";
+    nested["name"] = _name;
     nested["isOn"] = isOn();
     nested["percentage"] = _percentage;
     

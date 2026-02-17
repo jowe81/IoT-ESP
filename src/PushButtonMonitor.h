@@ -18,7 +18,6 @@ class PushButtonMonitor : public Device {
         bool _triggerExchange;
 
     public:
-        static constexpr const char* TYPE = "PushButtonMonitor";
         PushButtonMonitor(String name, int pin, bool activeLow = true);
         void setTarget(DeviceControl* target);
         void update() override;
@@ -26,7 +25,7 @@ class PushButtonMonitor : public Device {
         void resetTriggerExchange() override;
         bool isPressed();
         bool checkPressed();
-        void addToJson(JsonObject& doc) override;
+        void addToJson(JsonArray& doc) override;
         void processJson(JsonObject& doc) override;
         bool localAction();
         const String& getName();

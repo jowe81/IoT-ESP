@@ -70,9 +70,11 @@ void SHT31::update() {
     }
 }
 
-void SHT31::addToJson(JsonObject& doc) {
-    JsonObject nested = doc.createNestedObject(_name);
-    nested["type"] = "SHT31";
+void SHT31::addToJson(JsonArray& doc) {
+    JsonObject nested = doc.createNestedObject();
+    nested["type"] = "Sensor";
+    nested["subtype"] = "SHT31";
+    nested["name"] = _name;
     nested["interval"] = _interval;
     
     if (_available) {

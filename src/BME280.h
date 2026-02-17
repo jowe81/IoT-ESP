@@ -37,7 +37,7 @@ class BME280Reader : public Device {
         BME280Reader(String name, uint8_t address = 0x76, unsigned long interval = 60000, int eepromOffset = -1);
         void begin() override;
         void update() override;
-        void addToJson(JsonObject& doc) override;
+        void addToJson(JsonArray& doc) override;
         void processJson(JsonObject& doc) override;
         const String& getName() override;
 };

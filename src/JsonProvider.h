@@ -6,7 +6,7 @@
 
 class JsonProvider {
 public:
-    virtual void addToJson(JsonObject& doc) = 0;
+    virtual void addToJson(JsonArray& doc) = 0;
     virtual void processJson(JsonObject& doc) {}
     virtual ~JsonProvider() {}
 };

@@ -32,7 +32,7 @@ class DS18B20 : public Device {
         void begin();
         void update() override;
         float getTemperature();
-        void addToJson(JsonObject& doc) override;
+        void addToJson(JsonArray& doc) override;
         void processJson(JsonObject& doc) override;
         const String& getName();
 };

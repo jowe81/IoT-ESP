@@ -40,7 +40,6 @@ class BatteryMonitor : public Device {
     float applyAdjustment(float voltage, bool reverse = false);
 
   public:
-    static constexpr const char* TYPE = "BatteryMonitor";
     BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize, DS18B20* tempReader = nullptr, float temperature = 25.0);
     void begin();
     void update();
@@ -50,7 +49,7 @@ class BatteryMonitor : public Device {
     bool isCritical();
     bool gotLow();
     bool gotCritical();
-    void addToJson(JsonObject& doc) override;
+    void addToJson(JsonArray& doc) override;
     void processJson(JsonObject& doc) override;
     const String& getName();
 };

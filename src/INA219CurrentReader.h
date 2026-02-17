@@ -21,7 +21,7 @@ public:
     void begin() override;
     
     void update() override;
-    void addToJson(JsonObject& doc) override;
+    void addToJson(JsonArray& doc) override;
     void processJson(JsonObject& doc) override;
     const String& getName() override;
 

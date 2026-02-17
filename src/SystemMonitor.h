@@ -11,11 +11,10 @@ private:
     int _loopDelay;
 
 public:
-    static constexpr const char* TYPE = "SystemMonitor";
     SystemMonitor(String name, String deviceId);
     void begin() override {}
     void update() override {}
-    void addToJson(JsonObject& doc) override;
+    void addToJson(JsonArray& doc) override;
     uint32_t getFreeHeap();
     uint32_t getLargestBlock();
     bool fragmentationIsCritical();
