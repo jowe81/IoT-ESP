@@ -19,8 +19,8 @@ static SystemMonitor sysMon("systemMonitor", DEVICE_ID);
 // Push Button (D3) - GPIO0 must be HIGH at boot (Button is Normally Open)
 static PushButtonMonitor btn1("btn1", D3, true);
 
-// Temperature Reader (D5)
-static DS18B20 temp1(D5, "temp1", 0, 430);
+// Temperature Reader (D5) - not connected.
+//static DS18B20 temp1(D5, "temp1", 0, 430);
 
 // SHT31 Sensor (I2C: D2=SDA, D1=SCL)
 static SHT31 shtSensor("shtSensor", 0x44, 60000, 400);
@@ -47,7 +47,6 @@ void setupConfiguration() {
     // Populate generic device list (for update loop)
     allDevices.push_back(&sysMon);
     allDevices.push_back(&btn1);
-    allDevices.push_back(&temp1);
     allDevices.push_back(&shtSensor);
     allDevices.push_back(&rgbStrip);
     allDevices.push_back(&statusLed);
@@ -57,7 +56,6 @@ void setupConfiguration() {
     // Register providers to DataExchanger
     dataExchanger.addProvider(&sysMon);
     dataExchanger.addProvider(&btn1);
-    dataExchanger.addProvider(&temp1);
     dataExchanger.addProvider(&shtSensor);
     dataExchanger.addProvider(&rgbStrip);
     dataExchanger.addProvider(&statusLed);
