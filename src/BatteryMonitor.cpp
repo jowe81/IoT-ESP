@@ -33,6 +33,10 @@ BatteryMonitor::BatteryMonitor(String name, int pin, float ratio, float lowThres
 
 void BatteryMonitor::begin() {
     loadConfig();
+#ifdef ESP32
+    // Set attenuation to 11dB to allow reading up to 3.3V.
+    analogSetPinAttenuation(_pin, ADC_11db);
+#endif
 }
 
 void BatteryMonitor::loadConfig() {
@@ -116,12 +120,13 @@ void BatteryMonitor::update() {
             int raw = analogRead(_pin);
             delay(2);
             
-            // Convert 10-bit ADC (0-1023) to voltage based on the divider
+            // Convert ADC reading to voltage. We assume a 3.3V reference for the ADC.
+            // _ratio is now the multiplier for the voltage divider (e.g. 6.0 for a 1/6 divider).
             #ifdef ESP32
-                //float voltage = (raw / 4095.0) * _ratio * _voltageSensorAdjustmentFactor;
-                float voltage = raw * _ratio * _voltageSensorAdjustmentFactor;
+                float voltage = (raw / 4095.0) * 3.3 * _ratio * _voltageSensorAdjustmentFactor;
             #else
-                float voltage = (raw / 1023.0) * 3.3 * _ratio * _voltageSensorAdjustmentFactor;
+                // ESP8266 has a 1.0V max on its ADC pin.
+                float voltage = (raw / 1023.0) * 1.0 * _ratio * _voltageSensorAdjustmentFactor;
             #endif
 
             voltage = applyAdjustment(voltage);

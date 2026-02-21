@@ -1,8 +1,9 @@
 #include "DS18B20.h"
 #include <ArduinoJson.h>
+#include "Logger.h"
 
 DS18B20::DS18B20(int pin, String name, int sensorIndex, int eepromOffset) 
-    : _oneWire(pin), _sensors(&_oneWire), _name(name), _sensorIndex(sensorIndex), _lastGoodTemp(NAN), _badReadingCount(0), _maxBadReadings(0), _lastUpdateTime(0), _offset(0.0), _eepromOffset(eepromOffset) {
+    : _oneWire(pin), _sensors(&_oneWire), _name(name), _sensorIndex(sensorIndex), _available(true), _lastGoodTemp(NAN), _badReadingCount(0), _maxBadReadings(0), _lastUpdateTime(0), _offset(0.0), _eepromOffset(eepromOffset) {
 }
 
 void DS18B20::begin() {
@@ -23,10 +24,19 @@ void DS18B20::update() {
         if (tempC >= -70 && tempC <= 70) {
             _lastGoodTemp = tempC + _offset;
             _badReadingCount = 0;
+            if (!_available) {
+                Log.info(("DS18B20 " + _name + " is available again.").c_str());
+                _available = true;
+            }
         } else {
             _badReadingCount++;
             if (_badReadingCount > _maxBadReadings) {
                 _maxBadReadings = _badReadingCount;
+            }
+            if (_available && _badReadingCount >= MAX_CONSECUTIVE_BAD_READINGS) {
+                _available = false;
+                _lastGoodTemp = NAN;
+                Log.error(("DS18B20 " + _name + " is not available after " + String(MAX_CONSECUTIVE_BAD_READINGS) + " bad readings.").c_str());
             }
         }
     }
@@ -34,23 +44,29 @@ void DS18B20::update() {
 
 float DS18B20::getTemperature() {
     update();
-    if (_badReadingCount <= 5 && !isnan(_lastGoodTemp)) {
+    if (_available && !isnan(_lastGoodTemp)) {
         return _lastGoodTemp;
     }
     return NAN;
 }
 
 void DS18B20::addToJson(JsonArray& doc) {
-    float tempC = getTemperature();
     JsonObject nested = doc.createNestedObject();
     nested["type"] = "Sensor";
     nested["subtype"] = "DS18B20";
     nested["name"] = _name;
-    nested["tempC"] = tempC;
-    nested["tempF"] = DallasTemperature::toFahrenheit(tempC);
+    nested["available"] = _available;
     nested["maxBadReadings"] = _maxBadReadings;
     nested["tempCOffset"] = serialized(String(_offset, 2));
-    nested["isStale"] = (_badReadingCount > 0);
+
+    if (_available) {
+        float tempC = getTemperature();
+        nested["tempC"] = tempC;
+        nested["tempF"] = DallasTemperature::toFahrenheit(tempC);
+        nested["isStale"] = (_badReadingCount > 0);
+    } else {
+        nested["error"] = "Sensor not found";
+    }
 }
 
 void DS18B20::processJson(JsonObject& doc) {

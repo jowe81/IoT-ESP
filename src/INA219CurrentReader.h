@@ -25,6 +25,9 @@ public:
     void processJson(JsonObject& doc) override;
     const String& getName() override;
 
+    // Configure the sensor to use an external shunt
+    void setExternalShunt(float shuntOhms, float maxAmps);
+
 private:
     String _name;
     uint8_t _addr;
@@ -34,11 +37,20 @@ private:
     int _averagingSamples;
     Adafruit_INA219 _ina;
     TwoWire* _wire;
+    bool _available;
     
     double _currentSum;
     int _readingsCount;
     unsigned long _lastReadingTime;
+    unsigned long _lastReconnectAttempt;
     
+    // Members for external shunt support
+    bool _isExternalShunt;
+    float _shuntOhms;
+    float _maxAmps;
+    float _currentLSB;
+    uint16_t _calValue;
+
     float getAverageCurrent();
     void loadConfig();
     void saveConfig();

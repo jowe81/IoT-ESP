@@ -14,6 +14,7 @@ class BME280Reader : public Device {
         uint8_t _address;
         unsigned long _interval;
         unsigned long _lastUpdateTime;
+        unsigned long _lastReconnectAttempt;
         int _eepromOffset;
         
         float _temperature;

@@ -9,10 +9,12 @@
 
 class DS18B20 : public Device {
     private:
+        static const int MAX_CONSECUTIVE_BAD_READINGS = 5;
         OneWire _oneWire;
         DallasTemperature _sensors;
         String _name;
         int _sensorIndex;
+        bool _available;
         float _lastGoodTemp;
         int _badReadingCount;
         int _maxBadReadings;

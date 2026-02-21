@@ -4,7 +4,7 @@
 BME280Reader::BME280Reader(String name, uint8_t address, unsigned long interval, int eepromOffset) 
     : _name(name), _address(address), _interval(interval), _lastUpdateTime(0), _eepromOffset(eepromOffset),
       _temperature(NAN), _humidity(NAN), _pressure(NAN),
-      _tempSum(0), _humSum(0), _pressSum(0), _readingsCount(0), _available(false) {
+      _tempSum(0), _humSum(0), _pressSum(0), _readingsCount(0), _available(false), _lastReconnectAttempt(0) {
 }
 
 void BME280Reader::begin() {
@@ -56,7 +56,16 @@ void BME280Reader::saveConfig() {
 }
 
 void BME280Reader::update() {
-    if (!_available) return;
+    if (!_available) {
+        if (millis() - _lastReconnectAttempt >= 120000) {
+            _lastReconnectAttempt = millis();
+            if (_bme.begin(_address)) {
+                _available = true;
+                Log.info(("BME280 " + _name + " is available again.").c_str());
+            }
+        }
+        return;
+    }
 
     if (millis() - _lastUpdateTime >= _interval) {
         _lastUpdateTime = millis();
@@ -73,6 +82,10 @@ void BME280Reader::update() {
             _pressSum += p;
             _humSum += h;
             _readingsCount++;
+        } else {
+            Log.warn(("BME280 " + _name + " reading failed. Marking as unavailable.").c_str());
+            _available = false;
+            _lastReconnectAttempt = millis();
         }
     }
 }

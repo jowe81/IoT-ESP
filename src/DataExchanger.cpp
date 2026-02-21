@@ -21,12 +21,12 @@ struct DataExchangerConfig {
 };
 
 DataExchanger::DataExchanger(const char* name, const char* deviceId, unsigned long interval, const char* httpUrl, const char* mqttUrl, WifiConnection& wifi, int eepromOffset)
-    : _name(name), _deviceId(deviceId), _eepromOffset(eepromOffset), _interval(interval), _httpUrl(httpUrl), _mqttUrl(mqttUrl), _wifi(wifi), _lastExchangeTime(0), _lastMqttConnectionAttempt(0), _doc(2048), _triggerExchange(false) {
+    : _name(name), _deviceId(deviceId), _eepromOffset(eepromOffset), _interval(interval), _httpUrl(httpUrl), _mqttUrl(mqttUrl), _wifi(wifi), _lastExchangeTime(0), _lastMqttConnectionAttempt(0), _doc(4096), _triggerExchange(false) {
     
     _exchangerInstance = this;
     _mqttClient.setClient(_wifiClient);
     _mqttClient.setCallback(_mqttCallback);
-    _mqttClient.setBufferSize(2560); // Increase buffer for JSON payloads
+    _mqttClient.setBufferSize(4096); // Increase buffer for JSON payloads
 }
 
 void DataExchanger::begin() {

@@ -16,8 +16,9 @@ DataExchanger dataExchanger("dataExchanger", DEVICE_ID, 60000, "http://server.wn
 static SystemMonitor sysMon("systemMonitor", DEVICE_ID);
 static DS18B20 tempOutside(D5, "tempOutside", 0, 530);
 static DS18B20 tempControlBox(D5, "controlBox", 1, 540);
-static BatteryMonitor batMon("batteryMonitor", A0, 0.00484, 11.9, 11.5, 420, 60, &tempOutside);
-static RGBControl rgbStrip("rgbStrip", D1, D2, D6, false, 1000, 500);
+static BatteryMonitor batMon("batteryMonitor", A0, 6.0, 11.9, 11.5, 420, 60, &tempOutside);
+
+static RGBControl rgbStrip("rgbStrip", D6, D2, D1, false, 1000, 500);
 static RelayControl lightInside("lightInside", 32, false, true, 200, 300);
 static RelayControl lightOutside("lightOutside", 33, false, true, 200, 320);
 static RelayControl statusLed("statusLed", LED_BUILTIN, false);
@@ -34,11 +35,15 @@ void setupConfiguration() {
     systemBattery = &batMon;
     statusIndicator = &statusLed;
 
-    // 2. Configure wiring (Buttons -> Relays)
+    // 2. Configure devices
     lightSwitchForOutside.setTarget(&lightOutside);
     lightSwitchForInside.setTarget(&lightInside);
 
-    // 3. Populate generic device list (for update loop)
+    // Configure the 'chargeMeter' to use a 10A/75mV external shunt.
+    // Resistance = 0.075V / 10A = 0.0075 Ohms.
+    chargeMeter.setExternalShunt(0.0075, 10.0);
+
+    // 3. Populate generic device list for the main update loop
     allDevices.push_back(&batMon);
     allDevices.push_back(&tempOutside);
     allDevices.push_back(&tempControlBox);
