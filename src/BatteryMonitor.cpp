@@ -4,6 +4,7 @@
 #include <ArduinoJson.h>
 #include <EEPROM.h>
 #include "Logger.h"
+#include <vector>
 
 struct BatteryConfig {
     float low;
@@ -21,14 +22,18 @@ BatteryMonitor::BatteryMonitor(String name, int pin, float ratio, float lowThres
     : _pin(pin), _eepromOffset(eepromOffset), _name(name), _ratio(ratio), _lowThreshold(lowThreshold), _criticalThreshold(criticalThreshold),
       _voltageSensorAdjustmentFactor(1.0), _temperature(temperature), _tempReader(tempReader), _batteryType("flooded"), _batteryVoltage(12.0),
       _readingsBufferSize(readingsBufferSize),
-      _readingsIndex(0), _readingsCount(0), _lastReadingTime(0), _lastAcceptedReadingTime(0),
-      _lastKnownVoltage(0.0),
+      _smoothedVoltage(-1.0), _alpha(0.1), _lastReadingTime(0),
       _lowState(false), _criticalState(false), _lowEvent(false), _criticalEvent(false) {
     if (_name.length() == 0) {
         _name = "_battery";
     }
     pinMode(_pin, INPUT);
-    _readings.resize(_readingsBufferSize * READINGS_PER_CYCLE, 0.0);
+    
+    // Calculate Alpha based on buffer size to mimic previous behavior roughly.
+    // Alpha ~= 2 / (N + 1). For N=60, Alpha is approx 0.03.
+    if (_readingsBufferSize > 0) {
+        _alpha = 2.0 / (_readingsBufferSize + 1.0);
+    }
 }
 
 void BatteryMonitor::begin() {
@@ -53,9 +58,7 @@ void BatteryMonitor::loadConfig() {
             if (config.bufferSize > 0 && config.bufferSize < 1000) {
                 if (_readingsBufferSize != config.bufferSize) {
                     _readingsBufferSize = config.bufferSize;
-                    _readings.assign(_readingsBufferSize * READINGS_PER_CYCLE, 0.0);
-                    _readingsCount = 0;
-                    _readingsIndex = 0;
+                    _alpha = 2.0 / (_readingsBufferSize + 1.0);
                 }
             }
 
@@ -88,10 +91,17 @@ float BatteryMonitor::applyAdjustment(float voltage, bool reverse) {
     return voltage;
 }
 
+float BatteryMonitor::rawToVoltage(int raw) {
+    #ifdef ESP32
+        return (raw / 4095.0) * 3.3 * _ratio * _voltageSensorAdjustmentFactor;
+    #else
+        return (raw / 1023.0) * 1.0 * _ratio * _voltageSensorAdjustmentFactor;
+    #endif
+}
+
 void BatteryMonitor::update() {
     // Save a set of readings up to once every 900ms (in reality this should work out to about a second
     // with the lightsleep delay bein 1000ms also)
-    int totalReadings = _readingsBufferSize * READINGS_PER_CYCLE;
 
     if (millis() - _lastReadingTime >= 900) {
         _lastReadingTime = millis();
@@ -103,55 +113,46 @@ void BatteryMonitor::update() {
             }
         }
         
-        // Safety check: If we haven't accepted a valid reading in 30 seconds,
-        // assume the voltage has shifted significantly (e.g. charger connected)
-        // and reset the buffer to start a new average.
-        if (millis() - _lastAcceptedReadingTime > 30000) {
-            Log.warn("BatteryMonitor: Stuck rejecting outliers. Resetting buffer.");
-            _readingsCount = 0;
-            _readingsIndex = 0;
-            _lastAcceptedReadingTime = millis();
-            _lastKnownVoltage = 0.0; // Invalidate cache so we don't report phantom voltage
-        }
-
-        float currentAverage = getVoltage();
-
+        // 1. Take a burst of readings
+        std::vector<float> burstSamples;
         for (int i = 0; i < READINGS_PER_CYCLE; i++) {
             int raw = analogRead(_pin);
             delay(2);
             
             // Convert ADC reading to voltage. We assume a 3.3V reference for the ADC.
             // _ratio is now the multiplier for the voltage divider (e.g. 6.0 for a 1/6 divider).
-            #ifdef ESP32
-                float voltage = (raw / 4095.0) * 3.3 * _ratio * _voltageSensorAdjustmentFactor;
-            #else
-                // ESP8266 has a 1.0V max on its ADC pin.
-                float voltage = (raw / 1023.0) * 1.0 * _ratio * _voltageSensorAdjustmentFactor;
-            #endif
-
+            float voltage = rawToVoltage(raw);
             voltage = applyAdjustment(voltage);
 
-            bool isOutlier = false;
-
-            // Check absolute sanity limits
-            if (voltage < MIN_SANITY_VOLTAGE || voltage > MAX_SANITY_VOLTAGE) {
-                isOutlier = true;
+            // Basic sanity check only (0V is allowed for disconnected)
+            if (voltage >= 0.0 && voltage <= MAX_SANITY_VOLTAGE) {
+                burstSamples.push_back(voltage);
             }
+        }
 
-            if (!isOutlier && _readingsCount == totalReadings && currentAverage > 0) {
-                // Check if reading is within 10% of average to reject noise spikes
-                float margin = currentAverage * 0.10;
-                if (abs(voltage - currentAverage) > margin) {
-                    isOutlier = true;
+        if (burstSamples.empty()) return;
+
+        // 2. Median Filter: Sort to find the middle value.
+        // This effectively removes spark noise/glitches without complex logic.
+        // Simple bubble sort is fast enough for 5 items.
+        for (size_t i = 0; i < burstSamples.size() - 1; i++) {
+            for (size_t j = 0; j < burstSamples.size() - i - 1; j++) {
+                if (burstSamples[j] > burstSamples[j + 1]) {
+                    float temp = burstSamples[j];
+                    burstSamples[j] = burstSamples[j + 1];
+                    burstSamples[j + 1] = temp;
                 }
             }
+        }
+        float medianVoltage = burstSamples[burstSamples.size() / 2];
 
-            if (!isOutlier) {
-                _readings[_readingsIndex] = voltage;
-                _readingsIndex = (_readingsIndex + 1) % totalReadings;
-                if (_readingsCount < totalReadings) _readingsCount++;
-                _lastAcceptedReadingTime = millis();
-            }
+        // 3. Exponential Moving Average (EMA)
+        // If this is the first reading, initialize immediately.
+        if (_smoothedVoltage < 0) {
+            _smoothedVoltage = medianVoltage;
+        } else {
+            // Apply smoothing
+            _smoothedVoltage = (_smoothedVoltage * (1.0 - _alpha)) + (medianVoltage * _alpha);
         }
 
         // Update states with hysteresis
@@ -180,18 +181,10 @@ void BatteryMonitor::update() {
 }
 
 float BatteryMonitor::getVoltage() {
-    int totalReadings = _readingsBufferSize * READINGS_PER_CYCLE;
-
-    if (_readingsCount < totalReadings) {
-        // Return last known good voltage while refilling
-        return _lastKnownVoltage;
+    if (_smoothedVoltage < 0) {
+        return 0.0;
     }
-    float sum = 0;
-    for (int i = 0; i < totalReadings; i++) {
-        sum += _readings[i];
-    }
-    _lastKnownVoltage = sum / (float)totalReadings;
-    return _lastKnownVoltage;
+    return _smoothedVoltage;
 }
 
 bool BatteryMonitor::batteryIsConnected() {
@@ -224,8 +217,6 @@ bool BatteryMonitor::gotCritical() {
 }
 
 void BatteryMonitor::addToJson(JsonArray& doc) {
-    int totalReadings = _readingsBufferSize * READINGS_PER_CYCLE;
-
     float voltage = getVoltage();
 
     JsonObject nested = doc.createNestedObject();
@@ -235,25 +226,24 @@ void BatteryMonitor::addToJson(JsonArray& doc) {
     nested["bufferSize"] = _readingsBufferSize;
     
     if (voltage > 0) {
-        nested["voltage"] = voltage;
-        nested["voltageRaw"] = applyAdjustment(voltage, true);
+        nested["voltage"] = serialized(String(voltage, 2));
+        nested["voltageRaw"] = serialized(String(applyAdjustment(voltage, true), 2));
 
-        nested["thresholdLow"] = _lowThreshold;
-        nested["thresholdCritical"] = _criticalThreshold;
-        nested["adjustment"] = _voltageSensorAdjustmentFactor;
-        nested["temperature"] = _temperature;
+        nested["thresholdLow"] = serialized(String(_lowThreshold, 2));
+        nested["thresholdCritical"] = serialized(String(_criticalThreshold, 2));
+        nested["adjustment"] = serialized(String(_voltageSensorAdjustmentFactor, 3));
+        nested["temperature"] = serialized(String(_temperature, 2));
         nested["batteryType"] = _batteryType;
-        nested["batteryVoltage"] = _batteryVoltage;
+        nested["batteryVoltage"] = serialized(String(_batteryVoltage, 2));
         nested["isLow"] = isLow();
         nested["isCritical"] = isCritical();
-        nested["isStale"] = (_readingsCount < totalReadings);
         nested["isBuffering"] = false;
     } else {
         int raw = analogRead(_pin);
         nested["isBuffering"] = true;
         nested["raw"] = raw;
-        nested["momentary"] = raw * _ratio * _voltageSensorAdjustmentFactor;
-        nested["readingsCount"] = _readingsCount;
+        float momentary = rawToVoltage(raw);
+        nested["momentary"] = serialized(String(applyAdjustment(momentary), 2));
     }
 }
 
@@ -270,9 +260,7 @@ void BatteryMonitor::processJson(JsonObject& doc) {
             int newSize = config["setBufferSize"].as<int>();
             if (newSize > 0 && newSize != _readingsBufferSize) {
                 _readingsBufferSize = newSize;
-                _readings.assign(_readingsBufferSize * READINGS_PER_CYCLE, 0.0);
-                _readingsCount = 0;
-                _readingsIndex = 0;
+                _alpha = 2.0 / (_readingsBufferSize + 1.0);
             }
         }
         if (config.containsKey("setAdjustment")) {

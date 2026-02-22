@@ -3,7 +3,6 @@
 
 #include <Arduino.h>
 #include "Device.h"
-#include <vector>
 
 class DS18B20;
 
@@ -25,12 +24,9 @@ class BatteryMonitor : public Device {
     String _batteryType;
     float _batteryVoltage;
     int _readingsBufferSize;
-    std::vector<float> _readings;
-    int _readingsIndex;
-    int _readingsCount;
+    float _smoothedVoltage;
+    float _alpha; // Smoothing factor (0.0 - 1.0)
     unsigned long _lastReadingTime;
-    unsigned long _lastAcceptedReadingTime;
-    float _lastKnownVoltage;
     bool _lowState;
     bool _criticalState;
     bool _lowEvent;
@@ -38,6 +34,7 @@ class BatteryMonitor : public Device {
     void loadConfig();
     void saveConfig();
     float applyAdjustment(float voltage, bool reverse = false);
+    float rawToVoltage(int raw);
 
   public:
     BatteryMonitor(String name, int pin, float ratio, float lowThreshold, float criticalThreshold, int eepromOffset, int readingsBufferSize, DS18B20* tempReader = nullptr, float temperature = 25.0);

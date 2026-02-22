@@ -15,10 +15,10 @@ DataExchanger dataExchanger("dataExchanger", DEVICE_ID, 60000, "http://server.wn
 // --- Devices ---
 static SystemMonitor sysMon("systemMonitor", DEVICE_ID);
 static DS18B20 tempOutside(D5, "tempOutside", 0, 530);
-static DS18B20 tempControlBox(D5, "controlBox", 1, 540);
-static BatteryMonitor batMon("batteryMonitor", A0, 6.0, 11.9, 11.5, 420, 60, &tempOutside);
+static DS18B20 tempControlBox(D5, "battery", 1, 540);
+static BatteryMonitor batMon("batteryMonitor", A0, 11.7246, 11.9, 11.5, 420, 60, &tempOutside);
 
-static RGBControl rgbStrip("rgbStrip", D6, D2, D1, false, 1000, 500);
+static RGBControl rgbStrip("rgbStrip", D2, D6, D1, false, 1000, 500);
 static RelayControl lightInside("lightInside", 32, false, true, 200, 300);
 static RelayControl lightOutside("lightOutside", 33, false, true, 200, 320);
 static RelayControl statusLed("statusLed", LED_BUILTIN, false);
@@ -27,7 +27,7 @@ static PushButtonMonitor lightSwitchForOutside("lightSwitchOutside", D3, true);
 static PushButtonMonitor lightSwitchForInside("lightSwitchInside", D7, true);
 static INA219CurrentReader loadMeter("loadMeter", 0x40, 1000, 360, 128);
 static INA219CurrentReader chargeMeter("chargeMeter", 0x41, 1000, 390, 128);
-static BME280Reader bmeSensor("bmeSensor", 0x76, 60000, 480);
+static BME280Reader bmeSensor("controlBox", 0x76, 60000, 480);
 
 void setupConfiguration() {
     // 1. Assign specific pointers for main loop logic

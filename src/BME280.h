@@ -20,6 +20,9 @@ class BME280Reader : public Device {
         float _temperature;
         float _humidity;
         float _pressure;
+        float _tempOffset;
+        float _humOffset;
+        float _pressOffset;
         float _tempSum;
         float _humSum;
         float _pressSum;
@@ -28,6 +31,9 @@ class BME280Reader : public Device {
 
         struct Config {
             unsigned long interval;
+            float tempOffset;
+            float humOffset;
+            float pressOffset;
             uint32_t magic;
         };
 

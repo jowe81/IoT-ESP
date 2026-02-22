@@ -2,9 +2,10 @@
 #include "Logger.h"
 
 BME280Reader::BME280Reader(String name, uint8_t address, unsigned long interval, int eepromOffset) 
-    : _name(name), _address(address), _interval(interval), _lastUpdateTime(0), _eepromOffset(eepromOffset),
+    : _name(name), _address(address), _interval(interval), _lastUpdateTime(0), _lastReconnectAttempt(0), _eepromOffset(eepromOffset),
       _temperature(NAN), _humidity(NAN), _pressure(NAN),
-      _tempSum(0), _humSum(0), _pressSum(0), _readingsCount(0), _available(false), _lastReconnectAttempt(0) {
+      _tempOffset(0.0), _humOffset(0.0), _pressOffset(0.0),
+      _tempSum(0), _humSum(0), _pressSum(0), _readingsCount(0), _available(false) {
 }
 
 void BME280Reader::begin() {
@@ -41,16 +42,19 @@ void BME280Reader::loadConfig() {
     Config config;
     EEPROM.get(_eepromOffset, config);
     // Magic number to validate EEPROM data
-    if (config.magic == 0xCAFEBABE) {
+    if (config.magic == 0xCAFE2801) {
         if (config.interval >= 1000) {
             _interval = config.interval;
         }
+        _tempOffset = config.tempOffset;
+        _humOffset = config.humOffset;
+        _pressOffset = config.pressOffset;
     }
 }
 
 void BME280Reader::saveConfig() {
     if (_eepromOffset < 0) return;
-    Config config = { _interval, 0xCAFEBABE };
+    Config config = { _interval, _tempOffset, _humOffset, _pressOffset, 0xCAFE2801 };
     EEPROM.put(_eepromOffset, config);
     EEPROM.commit();
 }
@@ -75,6 +79,10 @@ void BME280Reader::update() {
         float h = _bme.readHumidity();
 
         if (!isnan(t) && !isnan(p) && !isnan(h)) {
+            t += _tempOffset;
+            h += _humOffset;
+            p += _pressOffset;
+
             _temperature = t;
             _pressure = p;
             _humidity = h;
@@ -98,6 +106,10 @@ void BME280Reader::addToJson(JsonArray& doc) {
     nested["available"] = _available;
     nested["interval"] = _interval;
     
+    nested["tempCOffset"] = serialized(String(_tempOffset, 2));
+    nested["humOffset"] = serialized(String(_humOffset, 2));
+    nested["pressOffset"] = serialized(String(_pressOffset, 2));
+
     if (_available) {
         float t = _temperature;
         float h = _humidity;
@@ -121,13 +133,30 @@ void BME280Reader::addToJson(JsonArray& doc) {
 void BME280Reader::processJson(JsonObject& doc) {
     if (doc.containsKey(_name)) {
         JsonObject config = doc[_name];
+        bool changed = false;
+
         if (config.containsKey("setInterval")) {
             unsigned long newInterval = config["setInterval"].as<unsigned long>();
             if (newInterval >= 1000 && newInterval != _interval) {
                 _interval = newInterval;
-                saveConfig();
+                changed = true;
             }
         }
+
+        if (config.containsKey("setTempCOffset")) {
+            _tempOffset = config["setTempCOffset"].as<float>();
+            changed = true;
+        }
+        if (config.containsKey("setHumOffset")) {
+            _humOffset = config["setHumOffset"].as<float>();
+            changed = true;
+        }
+        if (config.containsKey("setPressOffset")) {
+            _pressOffset = config["setPressOffset"].as<float>();
+            changed = true;
+        }
+
+        if (changed) saveConfig();
     }
 }
 

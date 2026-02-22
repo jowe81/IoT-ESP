@@ -1,4 +1,9 @@
 #include "SystemMonitor.h"
+#ifdef ESP32
+#include <WiFi.h>
+#else
+#include <ESP8266WiFi.h>
+#endif
 
 SystemMonitor::SystemMonitor(String name, String deviceId) : _deviceId(deviceId), _name(name), _loopDelay(20) {
     if (_name.length() == 0) {
@@ -15,6 +20,7 @@ void SystemMonitor::addToJson(JsonArray& doc) {
     nested["freeHeap"] = getFreeHeap();
     nested["largestBlock"] = getLargestBlock();
     nested["uptime"] = getUptime();
+    nested["rssi"] = WiFi.RSSI();
     nested["loopDelay"] = _loopDelay;
 }
 
