@@ -3,6 +3,7 @@
 #include "DS18B20.h"
 #include "RelayControl.h"
 #include "SHT31.h"
+#include "RGBControl.h"
 
 #ifdef CONFIG_RECROOM
 
@@ -23,6 +24,9 @@ static SHT31 shtSensor("shtSensor", 0x44, 60000, 400);
 // 2 Temperature Readers (D5, D6)
 static DS18B20 temp1(D5, "woodstove", 0, 300);
 
+// RGB Status Light (D6, D7, D8)
+static RGBControl woodstoveStatus("woodstoveStatusLed", D7, D8, D6, false, 1000, 500);
+
 // Status LED (Built-in LED is usually GPIO 2, Active Low)
 static RelayControl statusLed("statusLed", 2, true);
 
@@ -40,6 +44,7 @@ void setupConfiguration() {
     allDevices.push_back(&shtSensor);
     allDevices.push_back(&btn1);
     allDevices.push_back(&temp1);
+    allDevices.push_back(&woodstoveStatus);
     allDevices.push_back(&statusLed);
 
     // 4. Register providers to DataExchanger
@@ -47,6 +52,7 @@ void setupConfiguration() {
     dataExchanger.addProvider(&shtSensor);
     dataExchanger.addProvider(&btn1);
     dataExchanger.addProvider(&temp1);
+    dataExchanger.addProvider(&woodstoveStatus);
 }
 
 #endif
