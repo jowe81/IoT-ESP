@@ -3,10 +3,11 @@
 
 #include <Arduino.h>
 #include "DeviceControl.h"
+#include <vector>
 
 class RelayControl : public DeviceControl {
     private:
-        int pin;
+        std::vector<int> _pins;
         bool _activeLow;
         bool _pwm;
         int _percentage;
@@ -24,6 +25,7 @@ class RelayControl : public DeviceControl {
 
     public:
         RelayControl(String name, int pin, bool activeLow = false, bool pwm = false, int frequency = 1000, int eepromOffset = -1);
+        RelayControl(String name, const std::vector<int>& pins, bool activeLow = false, bool pwm = false, int frequency = 1000, int eepromOffset = -1);
         void begin();
         void turnOn() override;
         void turnOff() override;

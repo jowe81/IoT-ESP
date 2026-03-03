@@ -13,14 +13,23 @@ struct RelayConfig {
 };
 
 RelayControl::RelayControl(String name, int pin, bool activeLow, bool pwm, int frequency, int eepromOffset) 
-    : DeviceControl(name), pin(pin), _activeLow(activeLow), _pwm(pwm), _percentage(100), _frequency(frequency), _on(false), _autoOffTimer(0), _turnOnTime(0), _eepromOffset(eepromOffset), _fadeDuration(0), _lastHardwareDuty(0) {
-    pinMode(pin, OUTPUT);
+    : RelayControl(name, std::vector<int>{pin}, activeLow, pwm, frequency, eepromOffset) {
+}
+
+RelayControl::RelayControl(String name, const std::vector<int>& pins, bool activeLow, bool pwm, int frequency, int eepromOffset) 
+    : DeviceControl(name), _pins(pins), _activeLow(activeLow), _pwm(pwm), _percentage(100), _frequency(frequency), _on(false), _autoOffTimer(0), _turnOnTime(0), _eepromOffset(eepromOffset), _fadeDuration(0), _lastHardwareDuty(0) {
+    
+    for (int p : _pins) {
+        pinMode(p, OUTPUT);
+    }
 
     if (_pwm) {
         #ifdef ESP32
             _ledcChannel = _nextLedcChannel++;
             ledcSetup(_ledcChannel, _frequency, 8);
-            ledcAttachPin(pin, _ledcChannel);
+            for (int p : _pins) {
+                ledcAttachPin(p, _ledcChannel);
+            }
         #else
             // This will change frequency for all pins on the ES08266, as it can only be globally set.
             analogWriteFreq(_frequency);
@@ -116,7 +125,9 @@ void RelayControl::_updateHardware() {
                     #ifdef ESP32
                         ledcWrite(_ledcChannel, d);
                     #else
-                        analogWrite(pin, d);
+                        for (int p : _pins) {
+                            analogWrite(p, d);
+                        }
                     #endif
                     if (stepDelay > 0) delay(stepDelay);
                 }
@@ -125,13 +136,18 @@ void RelayControl::_updateHardware() {
             #ifdef ESP32
                 ledcWrite(_ledcChannel, targetDuty);
             #else
-                analogWrite(pin, targetDuty);
+                for (int p : _pins) {
+                    analogWrite(p, targetDuty);
+                }
             #endif
         }
         _lastHardwareDuty = targetDuty;
     } else {
         bool on = effectivePercentage > 0;
-        digitalWrite(pin, _activeLow ? (on ? LOW : HIGH) : (on ? HIGH : LOW));
+        int state = _activeLow ? (on ? LOW : HIGH) : (on ? HIGH : LOW);
+        for (int p : _pins) {
+            digitalWrite(p, state);
+        }
     }
 }
 
