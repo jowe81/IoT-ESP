@@ -56,6 +56,17 @@ void loop() {
 
     // Check connectivity and attempt to (re)connect if needed.
     wifi.update();
+
+    // Generic Device Update Loop
+    for (auto* device : allDevices) {
+        device->update();
+        
+        if (device->shouldTriggerExchange()) {
+            dataExchanger.exchange(true, device->getName().c_str());
+            device->resetTriggerExchange();
+        }
+    }
+
     if (!dataExchanger.exchange()) {
         Log.warn("Data exchange failed. Refreshing device states.");
         for (auto* device : allDevices) {
@@ -66,16 +77,6 @@ void loop() {
     // Leave the LED on if there's no connection, otherwise turn it off (creating a blink)
     if (statusIndicator && wifi.isConnected()) {
         statusIndicator->turnOff();
-    }
-
-    // Generic Device Update Loop
-    for (auto* device : allDevices) {
-        device->update();
-        
-        if (device->shouldTriggerExchange()) {
-            dataExchanger.exchange(true, device->getName().c_str());
-            device->resetTriggerExchange();
-        }
     }
 
     // Turn lights off if the battery is low, but only

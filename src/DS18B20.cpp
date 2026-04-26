@@ -21,7 +21,7 @@ void DS18B20::update() {
         _sensors.requestTemperatures();
         float tempC = _sensors.getTempCByIndex(_sensorIndex);
         
-        if (tempC >= -70 && tempC <= 70) {
+        if (tempC >= -70 && tempC <= 84) {
             _lastGoodTemp = tempC + _offset;
             _badReadingCount = 0;
             if (!_available) {
